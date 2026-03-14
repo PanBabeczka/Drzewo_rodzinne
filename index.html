@@ -16,7 +16,7 @@
 
     <div class="header">
         <h2>Moje Drzewo</h2>
-        <p>Układ typu "T" na osi czasu | Łuki sterowane przez roundness</p>
+        <p>Układ T | Partnerstwa bezdzietne są teraz widoczne</p>
     </div>
 
     <div id="drzewo"></div>
@@ -45,18 +45,19 @@
                     id: osoba.Id,
                     label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${osoba.RokUrodzenia}`,
                     shape: 'box',
-                    x: (Math.random() - 0.5) * 3000, // Szeroki start dla lepszej fizyki
+                    x: (Math.random() - 0.5) * 3000,
                     y: (rok - minRok) * SKALA_Y,
                     fixed: { y: true, x: false },
                     font: { multi: 'html', color: '#ffffff' },
                     color: { background: '#2c3e50', border: '#4dabf7' },
-                    margin: 15, // Odstęp tekstu od krawędzi kafelka
+                    margin: 15,
                     widthConstraint: { minimum: 130 }
                 });
             });
 
-            // 2. Tworzenie "Mostków" (Litera T)
+            // 2. Tworzenie relacji
             daneRodziny.forEach(osoba => {
+                // OBSŁUGA DZIECI I UNII (Litera T)
                 if (osoba.IdOjca && osoba.IdMatki) {
                     let para = [osoba.IdOjca, osoba.IdMatki].sort((a,b) => a-b).join('_');
                     let idUnii = "unia_" + para;
@@ -74,13 +75,33 @@
                             fixed: { y: true, x: false }
                         });
 
-                        // Ramiona T - roundness steruje wygięciem
                         edges.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888', width: 2 });
                         edges.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888', width: 2 });
                     }
                     edges.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
-                } else if (osoba.IdOjca || osoba.IdMatki) {
+                } 
+                // SAMOTNY RODZIC
+                else if (osoba.IdOjca || osoba.IdMatki) {
                     edges.push({ from: osoba.IdOjca || osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
+                }
+
+                // NOWOŚĆ: ŁĄCZENIE PARTNERÓW BEZ DZIECI
+                if (osoba.IdPartnera && osoba.Id < osoba.IdPartnera) {
+                    // Sprawdzamy, czy ta para ma już punkt unii (czy mają dzieci)
+                    let paraKlucz = [osoba.Id, osoba.IdPartnera].sort((a,b) => a-b).join('_');
+                    if (!unie["unia_" + paraKlucz]) {
+                        // Jeśli nie mają dzieci, rysujemy poziomą linię przerywaną między nimi
+                        edges.push({ 
+                            from: osoba.Id, 
+                            to: osoba.IdPartnera, 
+                            arrows: '', 
+                            color: '#e67e22', 
+                            width: 2, 
+                            dashes: [5, 5],
+                            label: 'związek',
+                            font: { color: '#e67e22', size: 10, align: 'top' }
+                        });
+                    }
                 }
             });
 
@@ -89,7 +110,7 @@
                     enabled: true,
                     solver: 'repulsion',
                     repulsion: { 
-                        nodeDistance: 600, // Duża wartość = szerokie drzewo i brak nachodzenia
+                        nodeDistance: 600, 
                         centralGravity: 0, 
                         springLength: 250,
                         damping: 0.1
@@ -100,8 +121,8 @@
                     smooth: { 
                         enabled: true, 
                         type: 'cubicBezier', 
-                        forceDirection: 'vertical', // Linie omijają kafelki od góry/dołu
-                        roundness: 0.5 // Zmieniaj od 0.1 do 1.0, aby dostosować łuk
+                        forceDirection: 'vertical', 
+                        roundness: 0.5 
                     }
                 },
                 interaction: { dragNodes: true, zoomView: true, dragView: true }
