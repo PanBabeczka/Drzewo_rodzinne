@@ -43,13 +43,23 @@
     var unie = {}; 
     var narysowaneZwiazki = new Set();
 
-    daneRodziny.forEach(function(osoba) {
-        let lata = osoba.RokUrodzenia + (osoba.RokSmierci ? " - " + osoba.RokSmierci : "");
+    // 1. Mapowanie roczników do poziomów (żeby uniknąć gigantycznych przerw)
+    // Znajdujemy najstarszy rok, żeby zacząć od poziomu 0
+    let lata = daneRodziny.map(o => o.RokUrodzenia).filter(y => y < 2100); // ignorujemy błędy typu 2999
+    let minRok = Math.min(...lata);
 
-        // DODAJEMY OSOBĘ (Bez pola 'level'!)
+    daneRodziny.forEach(function(osoba) {
+        let tekstLata = osoba.RokUrodzenia + (osoba.RokSmierci ? " - " + osoba.RokSmierci : "");
+        
+        // OBLICZANIE POZIOMU:
+        // Każdy rok to poziom. Jeśli damy levelSeparation: 10, to 20 lat różnicy = 200px.
+        // To wystarczy, by kafelki (wysokie na ok. 50px) się nie dotykały.
+        let mojPoziom = osoba.RokUrodzenia - minRok;
+
         wezly.push({
             id: osoba.Id,
-            label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + lata,
+            label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + tekstLata,
+            level: mojPoziom, 
             shape: 'box',
             widthConstraint: { minimum: 140, maximum: 140 },
             color: { 
@@ -67,12 +77,15 @@
             if (!unie[idUnii]) {
                 unie[idUnii] = true;
                 
-                // DODAJEMY KROPKĘ UNII (Bez pola 'level'!)
+                // Szukamy rocznika młodszego rodzica, by unia była tuż pod nimi
+                let rokOjca = daneRodziny.find(o => o.Id == osoba.IdOjca)?.RokUrodzenia || minRok;
+                let rokMatki = daneRodziny.find(o => o.Id == osoba.IdMatki)?.RokUrodzenia || minRok;
+                let poziomUnii = (Math.max(rokOjca, rokMatki) - minRok) + 5; // +5 lat pod rodzicami
+
                 wezly.push({ 
                     id: idUnii, 
-                    shape: 'dot', 
-                    size: 0, 
-                    color: 'rgba(0,0,0,0)' 
+                    level: poziomUnii,
+                    shape: 'dot', size: 0, color: 'rgba(0,0,0,0)' 
                 });
                 
                 krawedzie.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888888' });
@@ -85,12 +98,10 @@
             krawedzie.push({ from: parentId, to: osoba.Id, arrows: 'to', color: '#888888' });
         }
 
-        // MAŁŻEŃSTWO BEZDZIETNE
+        // Małżeństwo bezdzietne
         if (osoba.IdPartnera) {
             let para = [osoba.Id, osoba.IdPartnera].sort((a, b) => a - b).join('_');
-            let maDzieci = daneRodziny.some(d => (d.IdOjca == osoba.Id && d.IdMatki == osoba.IdPartnera) || (d.IdMatki == osoba.Id && d.IdOjca == osoba.IdPartnera));
-            
-            if (!narysowaneZwiazki.has(para) && !maDzieci) {
+            if (!narysowaneZwiazki.has(para)) {
                 krawedzie.push({ from: osoba.Id, to: osoba.IdPartnera, arrows: '', color: '#555555', dashes: [5, 5] });
                 narysowaneZwiazki.add(para);
             }
@@ -101,19 +112,17 @@
         layout: { 
             hierarchical: { 
                 direction: 'UD', 
-                sortMethod: 'directed', // Biblioteka sama wyliczy poziomy na podstawie krawędzi
-                levelSeparation: 150, 
-                nodeSpacing: 250,
-                parentCentralization: true
+                sortMethod: 'directed',
+                levelSeparation: 10, // 10px na każdy rok życia. 20 lat = 200px odstępu.
+                nodeSpacing: 250,    // Szerokość między gałęziami
+                parentCentralization: true,
+                blockShifting: true,
+                edgeMinimization: true
             } 
         },
         physics: false,
         edges: {
-            smooth: { 
-                type: 'cubicBezier', 
-                forceDirection: 'vertical', 
-                roundness: 0.5 
-            }
+            smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 }
         }
     };
 
