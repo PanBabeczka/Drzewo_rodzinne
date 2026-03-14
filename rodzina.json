@@ -3,48 +3,64 @@
     "Id": 1,
     "IdOjca": null,
     "IdMatki": null,
-    "Imie": "Jan",
-    "Nazwisko": "Kowalski",
-    "RokUrodzenia": 2999
+    "Imie": "Andrzej",
+    "Nazwisko": "Trocha",
+    "RokUrodzenia": 1950
   },
   {
     "Id": 2,
     "IdOjca": null,
     "IdMatki": null,
-    "Imie": "Anna",
-    "Nazwisko": "Kowalska",
-    "RokUrodzenia": 1952
+    "Imie": "Ma\u0142gorzata",
+    "Nazwisko": "Trocha",
+    "RokUrodzenia": 1955
   },
   {
     "Id": 3,
-    "IdOjca": 1,
-    "IdMatki": 2,
-    "Imie": "Tomasz",
-    "Nazwisko": "Kowalski",
-    "RokUrodzenia": 1975
+    "IdOjca": 8,
+    "IdMatki": null,
+    "Imie": "Patryk",
+    "Nazwisko": "Boryczko",
+    "RokUrodzenia": 1980
   },
   {
     "Id": 4,
-    "IdOjca": 6,
-    "IdMatki": null,
-    "Imie": "Maria",
-    "Nazwisko": "Nowak",
-    "RokUrodzenia": 1978
+    "IdOjca": 1,
+    "IdMatki": 2,
+    "Imie": "katarzyna",
+    "Nazwisko": "boryczko",
+    "RokUrodzenia": 1984
   },
   {
     "Id": 5,
     "IdOjca": 3,
     "IdMatki": 4,
     "Imie": "Piotr",
-    "Nazwisko": "Kowalski",
-    "RokUrodzenia": 2002
+    "Nazwisko": "boryczko",
+    "RokUrodzenia": 2007
+  },
+  {
+    "Id": 8,
+    "IdOjca": null,
+    "IdMatki": null,
+    "Imie": "Gerard",
+    "Nazwisko": "Boryczko",
+    "RokUrodzenia": 1945
   },
   {
     "Id": 6,
     "IdOjca": null,
     "IdMatki": null,
-    "Imie": "Stefan",
-    "Nazwisko": "Nowak",
-    "RokUrodzenia": 1945
+    "Imie": "Pawe\u0142",
+    "Nazwisko": "boryczko",
+    "RokUrodzenia": 2003
+  },
+  {
+    "Id": 7,
+    "IdOjca": null,
+    "IdMatki": null,
+    "Imie": "Nina",
+    "Nazwisko": "Dymek",
+    "RokUrodzenia": 2003
   }
 ]
