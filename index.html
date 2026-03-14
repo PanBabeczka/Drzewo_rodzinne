@@ -53,7 +53,6 @@
         wezly.push({
             id: osoba.Id,
             label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + lata,
-            level: osoba.RokUrodzenia, 
             shape: 'box',
             widthConstraint: { minimum: 140, maximum: 140 }, // Stała szerokość pomaga w wyrównaniu
             color: { 
@@ -109,37 +108,22 @@
         hierarchical: { 
             direction: 'UD', 
             sortMethod: 'directed',
-            // Zwiększamy drastycznie dystans między latami
-            levelSeparation: 15, 
-            // Zwiększamy dystans między osobami w tej samej linii
-            nodeSpacing: 450,    
-            treeSpacing: 500,
-            parentCentralization: true,
-            blockShifting: true,
-            edgeMinimization: true
+            levelSeparation: 150, // SZTYWNY odstęp między pokoleniami (w pikselach, nie w latach)
+            nodeSpacing: 300,    // Szerokość między kafelkami
+            parentCentralization: true
         } 
     },
-    // WŁĄCZAMY FIZYKĘ na chwilę, żeby kafelki same się odepchnęły
-    physics: {
-        enabled: true,
-        hierarchicalRepulsion: {
-            centralGravity: 0,
-            springLength: 200, // Długość "sprężyny" między kafelkami
-            nodeDistance: 300, // Minimalny dystans
-            damping: 0.09
-        },
-        solver: 'hierarchicalRepulsion',
-        stabilization: {
-            iterations: 100, // Program spróbuje ułożyć drzewo 100 razy zanim je pokaże
-            updateInterval: 25
-        }
+    physics: false, // Wyłączamy fizykę, żeby graf nie "uciekał"
+    nodes: {
+        margin: 10 // Dodatkowy margines wewnątrz kafelka
     },
     edges: {
         smooth: { 
             type: 'cubicBezier', 
             forceDirection: 'vertical', 
             roundness: 0.5 
-        }
+        },
+        color: '#888888'
     }
 };
     new vis.Network(document.getElementById('drzewo'), { nodes: wezly, edges: krawedzie }, opcje);
