@@ -78,5 +78,25 @@
     "Nazwisko": "Dymek",
     "RokUrodzenia": 2003,
     "RokSmierci": null
+  },
+  {
+    "Id": 9,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": 10,
+    "Imie": "adolf",
+    "Nazwisko": "hitler",
+    "RokUrodzenia": 1940,
+    "RokSmierci": 2010
+  },
+  {
+    "Id": 10,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": 9,
+    "Imie": "Anna",
+    "Nazwisko": "kozak",
+    "RokUrodzenia": 1945,
+    "RokSmierci": null
   }
 ]
