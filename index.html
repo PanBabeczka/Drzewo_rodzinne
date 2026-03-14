@@ -41,7 +41,7 @@
                     let daneRodziny = await odpowiedz.json();
                     rysujGraf(daneRodziny);
                 } else {
-                    console.error("Nie znaleziono pliku na serwerze GitHuba.");
+                    console.error("Nie znaleziono pliku na serwerze.");
                 }
             } catch (error) {
                 console.error("Błąd połączenia:", error);
@@ -55,21 +55,19 @@
             var dostepneId = new Set();
             daneRodziny.forEach(osoba => dostepneId.add(osoba.Id));
 
-            // 1. TWÓJ POMYSŁ: Mapujemy roczniki na poziomy osi Y
+            // Mapowanie osi Y na roczniki
             var poziomy = {};
             daneRodziny.forEach(osoba => { 
                 poziomy[osoba.Id] = osoba.RokUrodzenia > 0 ? osoba.RokUrodzenia : 2000; 
             });
 
-            // 2. WYRÓWNANIE MAŁŻONKÓW: Żeby linia więzi była prosta, rodzice muszą być na równej wysokości
+            // Wyrównanie małżonków do tego samego rocznika (starszego z nich)
             daneRodziny.forEach(osoba => {
                 let idOjca = osoba.IdOjca;
                 let idMatki = osoba.IdMatki;
 
                 if (idOjca && idMatki && dostepneId.has(idOjca) && dostepneId.has(idMatki)) {
-                    // Wyciągamy rok urodzenia starszego rodzica
                     let wyzszyPoziom = Math.min(poziomy[idOjca], poziomy[idMatki]);
-                    // Zmuszamy oboje do "zawiśnięcia" na tej samej, równej osi
                     poziomy[idOjca] = wyzszyPoziom;
                     poziomy[idMatki] = wyzszyPoziom;
                 }
@@ -78,11 +76,10 @@
             var unie = {}; 
 
             daneRodziny.forEach(function(osoba) {
-                // Rysujemy kafelki ludzi z przypisanym twardo poziomem (level)
                 wezly.push({
                     id: osoba.Id,
                     label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
-                    level: poziomy[osoba.Id], // <-- Tutaj program używa dat z osi
+                    level: poziomy[osoba.Id], 
                     shape: 'box',
                     color: { background: '#2c3e50', border: '#34495e' },
                     font: { size: 16, color: '#ffffff' },
@@ -95,39 +92,34 @@
                 let maOjca = idOjca !== null && idOjca !== 0 && dostepneId.has(idOjca);
                 let maMatke = idMatki !== null && idMatki !== 0 && dostepneId.has(idMatki);
 
+                // Wspólny kod dla równego rysowania krzywych
+                let stylKreski = { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0 };
+
                 if (maOjca && maMatke) {
                     let idUnii = "unia_" + (idOjca < idMatki ? idOjca + "_" + idMatki : idMatki + "_" + idOjca);
 
                     if (!unie[idUnii]) {
                         unie[idUnii] = true;
                         
-                        // Niewidzialny punkt więzi, dokładnie na tej samej osi co rodzice
+                        // Kropka węzła wyląduje 5 "lat" pod rodzicami, żeby linie ładnie wyszły dołem
                         wezly.push({ 
                             id: idUnii, 
-                            level: poziomy[idOjca], // Dziedziczy oś rodziców
+                            level: poziomy[idOjca] + 5, 
                             shape: 'dot', 
                             size: 0, 
                             color: 'rgba(0,0,0,0)', 
                             label: '' 
                         });
                         
-                        // IDEALNIE PROSTE, SZTYWNE LINIE dla więzi rodziców (smooth: false)
-                        krawedzie.push({ from: idOjca, to: idUnii, arrows: '', color: '#888888', smooth: false });
-                        krawedzie.push({ from: idMatki, to: idUnii, arrows: '', color: '#888888', smooth: false });
+                        krawedzie.push({ from: idOjca, to: idUnii, arrows: '', color: '#888888', smooth: stylKreski });
+                        krawedzie.push({ from: idMatki, to: idUnii, arrows: '', color: '#888888', smooth: stylKreski });
                     }
                     
-                    // Opadająca linia do dziecka (załamująca się pod kątem prostym)
-                    krawedzie.push({ 
-                        from: idUnii, 
-                        to: osoba.Id, 
-                        arrows: 'to', 
-                        color: '#888888', 
-                        smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0 } 
-                    });
+                    krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
 
                 } else {
-                    if (maOjca) krawedzie.push({ from: idOjca, to: osoba.Id, arrows: 'to', color: '#888888', smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0 } });
-                    if (maMatke) krawedzie.push({ from: idMatki, to: osoba.Id, arrows: 'to', color: '#888888', smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0 } });
+                    if (maOjca) krawedzie.push({ from: idOjca, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
+                    if (maMatke) krawedzie.push({ from: idMatki, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
                 }
             });
 
@@ -138,7 +130,7 @@
                 layout: { 
                     hierarchical: { 
                         direction: 'UD', 
-                        levelSeparation: 120, // Odległość w pionie między pokoleniami
+                        levelSeparation: 8, // <-- KOMPRESJA OSI CZASU: 8 pikseli na 1 rok
                         nodeSpacing: 250,     
                         treeSpacing: 300,
                         parentCentralization: true 
