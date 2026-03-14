@@ -8,7 +8,6 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: white; margin: 0; overflow: hidden; }
         #drzewo { width: 100vw; height: 100vh; background-color: #121212; }
         
-        /* Styl legendy */
         #legenda {
             position: absolute;
             bottom: 20px;
@@ -19,35 +18,23 @@
             border-radius: 8px;
             padding: 10px;
             transition: all 0.3s ease;
-            max-width: 200px;
+            max-width: 220px;
         }
         #legenda.zminimalizowana {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+            width: 40px; height: 40px; padding: 0; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
         .legenda-tresc { display: block; }
         .zminimalizowana .legenda-tresc { display: none; }
-        
         .legenda-item { display: flex; align-items: center; margin: 8px 0; font-size: 13px; }
         .linia { width: 30px; height: 2px; margin-right: 10px; }
         .strzalka { border-left: 10px solid #888; width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-right: 10px; }
-        
+        .kwadrat { width: 15px; height: 15px; margin-right: 10px; border: 1px solid #777; }
+
         #toggle-btn {
-            background: none;
-            border: none;
-            color: #4dabf7;
-            cursor: pointer;
-            float: right;
-            font-weight: bold;
-            font-size: 16px;
+            background: none; border: none; color: #4dabf7; cursor: pointer;
+            float: right; font-weight: bold; font-size: 16px;
         }
-        .zminimalizowana #toggle-btn { float: none; font-size: 20px; }
     </style>
 </head>
 <body>
@@ -56,23 +43,17 @@
         <button id="toggle-btn" onclick="toggleLegenda()">−</button>
         <div class="legenda-tresc">
             <b style="color: #4dabf7; display: block; margin-bottom: 10px;">Legenda</b>
-            <div class="legenda-item">
-                <div class="strzalka"></div> Relacja rodzic-dziecko
-            </div>
-            <div class="legenda-item">
-                <div class="linia" style="border-top: 2px dashed #e67e22;"></div> Związek (bez dzieci)
-            </div>
-            <div class="legenda-item">
-                <div style="width: 15px; height: 15px; background: #2c3e50; border: 1px solid #4dabf7; margin-right: 10px;"></div> Osoba żyjąca
-            </div>
-            <p style="font-size: 10px; color: #888;">Pionowa pozycja = Rok urodzenia</p>
+            <div class="legenda-item"><div class="strzalka"></div> Relacja rodzice-dzieci</div>
+            <div class="legenda-item"><div class="linia" style="border-top: 2px dashed #e67e22;"></div> Związek (bez dzieci)</div>
+            <div class="legenda-item"><div class="kwadrat" style="background: #2c3e50; border-color: #4dabf7;"></div> Osoba żyjąca</div>
+            <div class="legenda-item"><div class="kwadrat" style="background: #444; border-color: #888;"></div> Osoba zmarła</div>
+            <p style="font-size: 10px; color: #888; margin-top: 10px;">Pozycja pionowa = Rok urodzenia</p>
         </div>
     </div>
 
     <div id="drzewo"></div>
 
     <script type="text/javascript">
-        // Funkcja do minimalizacji legendy
         function toggleLegenda() {
             const leg = document.getElementById('legenda');
             const btn = document.getElementById('toggle-btn');
@@ -98,17 +79,28 @@
 
             daneRodziny.forEach(osoba => {
                 let rok = osoba.RokUrodzenia > 2026 ? 2024 : osoba.RokUrodzenia;
+                
+                // Formatuje tekst daty: "1940" lub "1940 - † 2010"
+                let infoData = osoba.RokUrodzenia;
+                if (osoba.RokSmierci) {
+                    infoData += ` - † ${osoba.RokSmierci}`;
+                }
+
                 nodes.push({
                     id: osoba.Id,
-                    label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${osoba.RokUrodzenia}`,
+                    label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${infoData}`,
                     shape: 'box',
                     x: (Math.random() - 0.5) * 3000,
                     y: (rok - minRok) * SKALA_Y,
                     fixed: { y: true, x: false },
                     font: { multi: 'html', color: '#ffffff' },
-                    color: { background: '#2c3e50', border: '#4dabf7' },
+                    // Zmiana koloru dla osób zmarłych
+                    color: { 
+                        background: osoba.RokSmierci ? '#444' : '#2c3e50', 
+                        border: osoba.RokSmierci ? '#888' : '#4dabf7' 
+                    },
                     margin: 15,
-                    widthConstraint: { minimum: 130 }
+                    widthConstraint: { minimum: 140 }
                 });
             });
 
@@ -135,7 +127,6 @@
                     edges.push({ from: osoba.IdOjca || osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
                 }
 
-                // Partnerstwo bez napisu na linii
                 if (osoba.IdPartnera && osoba.Id < osoba.IdPartnera) {
                     let paraKlucz = [osoba.Id, osoba.IdPartnera].sort((a,b) => a-b).join('_');
                     if (!unie["unia_" + paraKlucz]) {
