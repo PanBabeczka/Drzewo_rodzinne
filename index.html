@@ -6,7 +6,7 @@
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Segoe UI', sans-serif; 
             background-color: #1a1a1a; 
             color: white; 
             margin: 0; 
@@ -22,17 +22,20 @@
             top: 20px;
             left: 20px;
             z-index: 10;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
             pointer-events: none;
         }
-        h2 { margin: 0; color: #4dabf7; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        p { font-size: 0.9em; color: #888; }
+        h2 { margin: 0; color: #4dabf7; }
+        p { font-size: 0.8em; color: #aaa; margin: 5px 0 0 0; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>Drzewo Rodzinne</h2>
-        <p>Oś pionowa: Rok urodzenia</p>
+        <p>Pion: Rok urodzenia | Możesz przesuwać kafelki na boki</p>
     </div>
 
     <div id="drzewo"></div>
@@ -40,14 +43,14 @@
     <script type="text/javascript">
         async function zaladujDane() {
             try {
-                // Fetch z timestampem, aby uniknąć cache
+                // Fetch z timestampem, żeby zawsze brało najnowszy plik z GitHub
                 let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime());
                 if (odpowiedz.ok) {
                     let dane = await odpowiedz.json();
                     rysujGraf(dane);
                 }
             } catch (e) {
-                console.error("Błąd ładowania JSON:", e);
+                console.error("Błąd ładowania:", e);
             }
         }
 
@@ -58,76 +61,77 @@
             let nodes = [];
             let edges = [];
 
-            // Znajdujemy najwcześniejszy rok, aby zacząć rysować od góry ekranu
+            // Filtracja lat i szukanie najstarszego przodka
             const lata = daneRodziny.map(o => o.RokUrodzenia).filter(r => r < 2100);
             const minRok = Math.min(...lata);
 
             daneRodziny.forEach(osoba => {
-                // Obliczamy sztywną pozycję Y na podstawie roku
-                // Jeśli ktoś ma rok 2999 (błąd), ustawiamy go niżej (np. na rok 2024)
+                // 1. Pozycjonowanie pionowe (Rok urodzenia)
                 let rok = osoba.RokUrodzenia > 2026 ? 2024 : osoba.RokUrodzenia;
                 let posY = (rok - minRok) * SKALA_Y;
 
-                // Dodanie osoby
+                // 2. Dodanie osoby
                 nodes.push({
                     id: osoba.Id,
                     label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${osoba.RokUrodzenia}${osoba.RokSmierci ? ' - '+osoba.RokSmierci : ''}`,
                     shape: 'box',
-                    x: Math.random() * 100, // Losowy start X, fizyka zajmie się resztą
+                    // Nadajemy bardzo szeroki start, żeby fizyka miała łatwiej rozsunąć gałęzie
+                    x: (Math.random() - 0.5) * 3000, 
                     y: posY,
-                    fixed: { y: true, x: false }, // Blokujemy pion (oś czasu), pozwalamy na ruch w poziomie
+                    // BLOKUJEMY PION (Y), pozwalamy na ruch w poziomie (X)
+                    fixed: { y: true, x: false }, 
                     font: { multi: 'html', color: '#ffffff', size: 14 },
                     color: {
                         background: '#2c3e50',
-                        border: '#4dabf7',
-                        highlight: { background: '#3498db', border: '#fff' }
+                        border: '#4dabf7'
                     },
                     margin: 10,
-                    widthConstraint: { minimum: 120, maximum: 180 }
+                    widthConstraint: { minimum: 130, maximum: 180 }
                 });
 
-                // Relacje rodzicielskie (bez kropek unii - czyściej w trybie fizycznym)
+                // 3. Połączenia rodzice -> dzieci
                 if (osoba.IdOjca) {
-                    edges.push({ from: osoba.IdOjca, to: osoba.Id, color: '#555', arrows: 'to' });
+                    edges.push({ from: osoba.IdOjca, to: osoba.Id, color: '#666', arrows: 'to' });
                 }
                 if (osoba.IdMatki) {
-                    edges.push({ from: osoba.IdMatki, to: osoba.Id, color: '#555', arrows: 'to' });
+                    edges.push({ from: osoba.IdMatki, to: osoba.Id, color: '#666', arrows: 'to' });
                 }
 
-                // Partnerstwo (linia przerywana)
-                if (osoba.IdPartnera) {
-                    // Rysujemy tylko jedną linię dla pary (sprawdzamy ID by nie dublować)
-                    if (osoba.Id < osoba.IdPartnera) {
-                        edges.push({ 
-                            from: osoba.Id, 
-                            to: osoba.IdPartnera, 
-                            dashes: [5, 5], 
-                            color: '#e67e22', 
-                            arrows: '' 
-                        });
-                    }
+                // 4. Połączenia partnerów (mąż/żona)
+                if (osoba.IdPartnera && osoba.Id < osoba.IdPartnera) {
+                    edges.push({ 
+                        from: osoba.Id, 
+                        to: osoba.IdPartnera, 
+                        dashes: [5, 5], 
+                        color: '#e67e22', 
+                        arrows: '' 
+                    });
                 }
             });
 
-            const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+            const data = { 
+                nodes: new vis.DataSet(nodes), 
+                edges: new vis.DataSet(edges) 
+            };
 
             const options = {
                 physics: {
                     enabled: true,
                     solver: 'repulsion',
                     repulsion: {
-                        nodeDistance: 250, // Odstęp poziomy między kafelkami
+                        nodeDistance: 500, // TO ROZSUWA DRZEWO NA BOKI (zwiększ jeśli za wąskie)
                         centralGravity: 0,
-                        springLength: 150,
-                        damping: 0.09
+                        springLength: 300,
+                        damping: 0.1
                     },
-                    stabilization: { iterations: 150 }
+                    stabilization: { iterations: 100 }
                 },
                 edges: {
                     smooth: {
-                        type: 'cubicBezier',
+                        enabled: true,
+                        type: 'cubicBezier', // Linie w formie eleganckich łuków
                         forceDirection: 'vertical',
-                        roundness: 0.4
+                        roundness: 0.7
                     }
                 },
                 interaction: {
