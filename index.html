@@ -6,25 +6,17 @@
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
+            font-family: 'Segoe UI', sans-serif; 
             background-color: #121212; 
             color: #e0e0e0; 
-            margin: 0;
-            padding: 20px;
+            margin: 0; padding: 20px;
         }
-        
         #drzewo { 
-            width: 95%; 
-            height: 750px; 
-            border: 1px solid #333; 
-            margin: 20px auto; 
-            background-color: #1e1e1e; 
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            width: 95%; height: 800px; 
+            border: 1px solid #333; margin: 20px auto; 
+            background-color: #1e1e1e; border-radius: 8px;
         }
-
-        h2 { margin-top: 10px; color: #ffffff; }
+        h2 { text-align: center; color: #ffffff; }
     </style>
 </head>
 <body>
@@ -35,107 +27,103 @@
     <script type="text/javascript">
         async function zaladujDane() {
             try {
-                let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime(), { cache: "no-store" });
-                
+                // Dodajemy timestamp, aby przeglądarka nie cache'owała starego pliku JSON
+                let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime());
                 if (odpowiedz.ok) {
-                    let daneRodziny = await odpowiedz.json();
-                    rysujGraf(daneRodziny);
-                } else {
-                    console.error("Nie znaleziono pliku na serwerze.");
+                    let dane = await odpowiedz.json();
+                    rysujGraf(dane);
                 }
-            } catch (error) {
-                console.error("Błąd połączenia:", error);
-            }
+            } catch (e) { console.error("Błąd ładowania:", e); }
         }
 
         function rysujGraf(daneRodziny) {
             var wezly = [];
             var krawedzie = [];
-            
-            var dostepneId = new Set();
-            daneRodziny.forEach(osoba => dostepneId.add(osoba.Id));
-
-            // Mapowanie osi Y na roczniki (każdy zostaje tam, gdzie jego wiek!)
-            var poziomy = {};
-            daneRodziny.forEach(osoba => { 
-                poziomy[osoba.Id] = osoba.RokUrodzenia > 0 ? osoba.RokUrodzenia : 2000; 
-            });
-
             var unie = {}; 
+            var narysowaneZwiazki = new Set(); // Do śledzenia narysowanych linii małżeńskich
+
+            // 1. Najpierw budujemy mapę roczników
+            var poziomy = {};
+            daneRodziny.forEach(o => { poziomy[o.Id] = o.RokUrodzenia; });
 
             daneRodziny.forEach(function(osoba) {
+                // --- FORMATOWANIE ETYKIETY (Lata życia) ---
+                let lata = "ur. " + osoba.RokUrodzenia;
+                if (osoba.RokSmierci) {
+                    lata = osoba.RokUrodzenia + " - " + osoba.RokSmierci;
+                }
+
+                // --- DODAWANIE OSOBY ---
                 wezly.push({
                     id: osoba.Id,
-                    label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
-                    level: poziomy[osoba.Id], 
+                    label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + lata,
+                    level: osoba.RokUrodzenia, 
                     shape: 'box',
-                    color: { background: '#2c3e50', border: '#34495e' },
-                    font: { size: 16, color: '#ffffff' },
-                    margin: 10
+                    // Stylizacja: zmarli są ciemniejsi
+                    color: { 
+                        background: osoba.RokSmierci ? '#1a252f' : '#2c3e50', 
+                        border: '#34495e' 
+                    },
+                    font: { color: osoba.RokSmierci ? '#888888' : '#ffffff', size: 15 }
                 });
 
-                let idOjca = osoba.IdOjca;
-                let idMatki = osoba.IdMatki;
+                // --- LINIE MAŁŻEŃSKIE (Bezdzietne) ---
+                if (osoba.IdPartnera) {
+                    let para = [osoba.Id, osoba.IdPartnera].sort((a, b) => a - b).join('_');
+                    // Sprawdzamy, czy ta para nie ma dzieci (jeśli mają, unia zajmie się linią)
+                    let maDzieci = daneRodziny.some(d => (d.IdOjca == osoba.Id && d.IdMatki == osoba.IdPartnera) || (d.IdMatki == osoba.Id && d.IdOjca == osoba.IdPartnera));
+                    
+                    if (!narysowaneZwiazki.has(para) && !maDzieci) {
+                        krawedzie.push({ 
+                            from: osoba.Id, to: osoba.IdPartnera, 
+                            arrows: '', color: '#555555', dashes: [5, 5] 
+                        });
+                        narysowaneZwiazki.add(para);
+                    }
+                }
 
-                let maOjca = idOjca !== null && idOjca !== 0 && dostepneId.has(idOjca);
-                let maMatke = idMatki !== null && idMatki !== 0 && dostepneId.has(idMatki);
+                // --- LINIE RODZICIELSKIE (Z dziećmi) ---
+                let maObojeRodzicow = osoba.IdOjca && osoba.IdMatki;
 
-                // Bardzo delikatny łuk pozwala linii omijać kafelki
-                let stylKreski = { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.3 };
-
-                if (maOjca && maMatke) {
-                    let idUnii = "unia_" + (idOjca < idMatki ? idOjca + "_" + idMatki : idMatki + "_" + idOjca);
-
+                if (maObojeRodzicow) {
+                    let idUnii = "unia_" + [osoba.IdOjca, osoba.IdMatki].sort().join('_');
+                    
                     if (!unie[idUnii]) {
                         unie[idUnii] = true;
+                        // Kropka unii 5 pikseli pod MŁODSZYM rodzicem
+                        let poziomUnii = Math.max(poziomy[osoba.IdOjca], poziomy[osoba.IdMatki]) + 5;
                         
-                        // Szukamy rocznika tego z rodziców, który urodził się później
-                        let najmlodszyRodzic = Math.max(poziomy[idOjca], poziomy[idMatki]);
-                        
-                        // Kropka węzła ląduje zawsze rygorystycznie pod młodszym rodzicem (+4 "lata" niżej)
                         wezly.push({ 
-                            id: idUnii, 
-                            level: najmlodszyRodzic + 4, 
-                            shape: 'dot', 
-                            size: 0, 
-                            color: 'rgba(0,0,0,0)', 
-                            label: '' 
+                            id: idUnii, level: poziomUnii, 
+                            shape: 'dot', size: 0, color: 'rgba(0,0,0,0)' 
                         });
                         
-                        // NIEWIDZIALNA SPRĘŻYNA: Wymuszamy układanie partnerów obok siebie w poziomie
-                        krawedzie.push({ from: idOjca, to: idMatki, color: 'rgba(0,0,0,0)', arrows: '', physics: false });
-
-                        // Prowadzenie linii do kropki
-                        krawedzie.push({ from: idOjca, to: idUnii, arrows: '', color: '#888888', smooth: stylKreski });
-                        krawedzie.push({ from: idMatki, to: idUnii, arrows: '', color: '#888888', smooth: stylKreski });
+                        krawedzie.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888888' });
+                        krawedzie.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888888' });
                     }
-                    
-                    // Prowadzenie linii od kropki do dziecka
-                    krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
-
+                    krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
                 } else {
-                    if (maOjca) krawedzie.push({ from: idOjca, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
-                    if (maMatke) krawedzie.push({ from: idMatki, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
+                    // Tylko jeden rodzic
+                    if (osoba.IdOjca) krawedzie.push({ from: osoba.IdOjca, to: osoba.Id, arrows: 'to', color: '#888888' });
+                    if (osoba.IdMatki) krawedzie.push({ from: osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888888' });
                 }
             });
 
             var pojemnik = document.getElementById('drzewo');
-            var daneGrafu = { nodes: new vis.DataSet(wezly), edges: new vis.DataSet(krawedzie) };
-            
             var opcje = {
                 layout: { 
                     hierarchical: { 
                         direction: 'UD', 
-                        levelSeparation: 15, // Optymalny balans przestrzeni między pokoleniami
-                        nodeSpacing: 250,     
-                        treeSpacing: 300,
+                        levelSeparation: 15, // Gęsta oś czasu
+                        nodeSpacing: 200, 
                         parentCentralization: true 
                     } 
                 },
-                physics: false 
+                edges: { smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 } },
+                physics: false
             };
 
-            new vis.Network(pojemnik, daneGrafu, opcje);
+            new vis.Network(pojemnik, { nodes: wezly, edges: krawedzie }, opcje);
         }
 
         zaladujDane();
