@@ -52,15 +52,12 @@
             var wezly = [];
             var krawedzie = [];
             
-            // Zbieramy dostępne ID, by uniknąć błędów
             var dostepneId = new Set();
             daneRodziny.forEach(osoba => dostepneId.add(osoba.Id));
 
-            // Słownik, który zapamięta, czy już narysowaliśmy węzeł między danymi rodzicami
             var unie = {}; 
 
             daneRodziny.forEach(function(osoba) {
-                // Rysujemy główny kafelek osoby
                 wezly.push({
                     id: osoba.Id,
                     label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
@@ -80,34 +77,28 @@
                 let maOjca = idOjca !== null && idOjca !== 0 && dostepneId.has(idOjca);
                 let maMatke = idMatki !== null && idMatki !== 0 && dostepneId.has(idMatki);
 
-                // --- GŁÓWNA MAGIA: ŁĄCZENIE RODZICÓW ---
                 if (maOjca && maMatke) {
-                    // Generujemy unikalny identyfikator dla ich związku
                     let idUnii = "unia_" + (idOjca < idMatki ? idOjca + "_" + idMatki : idMatki + "_" + idOjca);
 
-                    // Jeśli jeszcze nie połączyliśmy tych rodziców (bo np. to ich pierwsze dziecko w pętli)
                     if (!unie[idUnii]) {
                         unie[idUnii] = true;
                         
-                        // Dodajemy na graf małą kropkę symbolizującą ich związek
+                        // KROPA ZŁĄCZENIA JEST TERAZ CAŁKOWICIE NIEWIDZIALNA
                         wezly.push({ 
                             id: idUnii, 
                             shape: 'dot', 
-                            size: 3, 
-                            color: '#888888', 
+                            size: 0, // Rozmiar zero
+                            color: 'rgba(0,0,0,0)', // W 100% przezroczysta
                             label: '' 
                         });
                         
-                        // Rysujemy poziome linie od ojca i matki do tej kropki (bez strzałek na końcu)
                         krawedzie.push({ from: idOjca, to: idUnii, arrows: '', color: '#888888' });
                         krawedzie.push({ from: idMatki, to: idUnii, arrows: '', color: '#888888' });
                     }
                     
-                    // Rysujemy pionową linię od kropki związku do dziecka
                     krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
 
                 } else {
-                    // Jeśli w bazie jest tylko jeden rodzic, rysujemy klasyczną linię
                     if (maOjca) {
                         krawedzie.push({ from: idOjca, to: osoba.Id, arrows: 'to', color: '#888888' });
                     }
@@ -123,17 +114,21 @@
             var opcje = {
                 layout: { 
                     hierarchical: { 
-                        direction: 'UD', // Grawitacja z góry na dół
+                        direction: 'UD', 
                         sortMethod: 'directed',
-                        levelSeparation: 120, // Zmniejszyłem lekko wysokość, by kropka związku lepiej wyglądała
-                        nodeSpacing: 180      
+                        levelSeparation: 100, // Zmniejszyłem odległość w pionie, by linia rodziców wyglądała bardziej naturalnie
+                        nodeSpacing: 250,     // Zwiększyłem odległość w poziomie - pomaga omijać przecięcia kresek!
+                        treeSpacing: 300,
+                        blockShifting: true,         // Włącza algorytm przesuwania gałęzi
+                        edgeMinimization: true,      // Wymusza minimalizację krzyżowania się linii
+                        parentCentralization: true   // Zawsze stawia rodziców równo nad dziećmi
                     } 
                 },
                 edges: {
                     smooth: {
                         type: 'cubicBezier', 
                         forceDirection: 'vertical',
-                        roundness: 0 // Zmiana na 0 robi ostre kąty (linie prostopadłe)!
+                        roundness: 0 // Zostawiamy 0 dla ładnych, prostopadłych linii (jak kable na schemacie)
                     }
                 },
                 physics: false 
