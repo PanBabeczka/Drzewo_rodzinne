@@ -9,13 +9,14 @@
         #drzewo { width: 100vw; height: 100vh; background-color: #121212; }
         .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; pointer-events: none; border: 1px solid #444; }
         h2 { margin: 0; color: #4dabf7; }
+        p { font-size: 0.8em; color: #aaa; margin: 5px 0 0 0; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>Moje Drzewo</h2>
-        <p>Układ typu "T" na osi czasu</p>
+        <p>Układ typu "T" na osi czasu | Łuki sterowane przez roundness</p>
     </div>
 
     <div id="drzewo"></div>
@@ -44,11 +45,12 @@
                     id: osoba.Id,
                     label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${osoba.RokUrodzenia}`,
                     shape: 'box',
-                    x: (Math.random() - 0.5) * 2500,
+                    x: (Math.random() - 0.5) * 3000, // Szeroki start dla lepszej fizyki
                     y: (rok - minRok) * SKALA_Y,
                     fixed: { y: true, x: false },
                     font: { multi: 'html', color: '#ffffff' },
                     color: { background: '#2c3e50', border: '#4dabf7' },
+                    margin: 15, // Odstęp tekstu od krawędzi kafelka
                     widthConstraint: { minimum: 130 }
                 });
             });
@@ -63,8 +65,6 @@
                         unie[idUnii] = true;
                         let r1 = daneRodziny.find(o => o.Id == osoba.IdOjca).RokUrodzenia;
                         let r2 = daneRodziny.find(o => o.Id == osoba.IdMatki).RokUrodzenia;
-                        
-                        // Punkt unii na poziomie młodszego rodzica + mały margines (2 lata)
                         let rokUnii = Math.max(r1, r2) + 2; 
 
                         nodes.push({
@@ -74,14 +74,13 @@
                             fixed: { y: true, x: false }
                         });
 
-                        // Poziome ramiona litery T (bez strzałek)
-                        edges.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888', width: 2, smooth: { type: 'stepAfter' } });
-                        edges.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888', width: 2, smooth: { type: 'stepAfter' } });
+                        // Ramiona T - roundness steruje wygięciem
+                        edges.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888', width: 2 });
+                        edges.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888', width: 2 });
                     }
-                    // Pionowa nóżka litery T do dziecka
-                    edges.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888', width: 2, smooth: { type: 'stepBefore' } });
+                    edges.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
                 } else if (osoba.IdOjca || osoba.IdMatki) {
-                    edges.push({ from: osoba.IdOjca || osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888' });
+                    edges.push({ from: osoba.IdOjca || osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
                 }
             });
 
@@ -89,11 +88,23 @@
                 physics: {
                     enabled: true,
                     solver: 'repulsion',
-                    repulsion: { nodeDistance: 400, centralGravity: 0, springLength: 200 }
+                    repulsion: { 
+                        nodeDistance: 600, // Duża wartość = szerokie drzewo i brak nachodzenia
+                        centralGravity: 0, 
+                        springLength: 250,
+                        damping: 0.1
+                    },
+                    stabilization: { iterations: 200 }
                 },
                 edges: {
-                    smooth: { enabled: true, roundness: 0.3 }
-                }
+                    smooth: { 
+                        enabled: true, 
+                        type: 'cubicBezier', 
+                        forceDirection: 'vertical', // Linie omijają kafelki od góry/dołu
+                        roundness: 0.5 // Zmieniaj od 0.1 do 1.0, aby dostosować łuk
+                    }
+                },
+                interaction: { dragNodes: true, zoomView: true, dragView: true }
             };
 
             new vis.Network(document.getElementById('drzewo'), { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, options);
