@@ -57,17 +57,15 @@
         let mojPoziom = osoba.RokUrodzenia - minRok;
 
         wezly.push({
-            id: osoba.Id,
-            label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + tekstLata,
-            level: mojPoziom, 
-            shape: 'box',
-            widthConstraint: { minimum: 140, maximum: 140 },
-            color: { 
-                background: osoba.RokSmierci ? '#1a252f' : '#2c3e50', 
-                border: '#34495e' 
-            },
-            font: { color: '#ffffff', size: 14 }
-        });
+    id: osoba.Id,
+    label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + lata,
+    level: mojPoziom,
+    // Jeśli Id jest parzyste, dajemy na lewo (-200), jeśli nieparzyste na prawo (200)
+    // To zmusi bibliotekę do rozbicia tej pionowej linii.
+    x: (osoba.Id % 2 === 0) ? -200 : 200, 
+    shape: 'box',
+    // ... reszta Twoich opcji
+});
 
         // ŁĄCZENIE RODZICÓW I DZIECI
         if (osoba.IdOjca && osoba.IdMatki) {
@@ -119,7 +117,10 @@
                 nodeSpacing: 500,    // Szerokość między gałęziami
                 parentCentralization: false,
                 blockShifting: false, // Zapobiega "prostowaniu" gałęzi do jednej linii
-                edgeMinimization: false
+                edgeMinimization: false,
+                edgeSpacing: 200,         // Dodaje dystans między liniami
+                treeSpacing: 800,
+                sortMethod: 'hubsize'
                 
             } 
         },
