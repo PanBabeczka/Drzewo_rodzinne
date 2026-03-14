@@ -5,118 +5,95 @@
     <title>Moje Drzewo Genealogiczne</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f8f9fa; }
-        #drzewo { 
-            width: 90%; 
-            height: 700px; 
-            border: 1px solid #d1d5db; 
-            margin: 20px auto; 
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* Włączony Dark Mode z automatu */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            background-color: #121212; /* Ciemne tło */
+            color: #e0e0e0; /* Jasny tekst */
+            margin: 0;
+            padding: 20px;
         }
-        #panel-awaryjny { display: none; margin: 20px; padding: 15px; background: #ffeeba; border-radius: 8px; }
-        #komunikat { font-weight: bold; color: #555; margin-top: 20px; }
+        
+        #drzewo { 
+            width: 95%; 
+            height: 750px; 
+            border: 1px solid #333; /* Ciemniejsza ramka */
+            margin: 20px auto; 
+            background-color: #1e1e1e; /* Tło obszaru roboczego grafu */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        h2 { margin-top: 10px; color: #ffffff; }
     </style>
 </head>
 <body>
 
     <h2>Moje Drzewo Genealogiczne</h2>
     
-    <div id="komunikat">Szukam pliku rodzina.json...</div>
-
-    <div id="panel-awaryjny">
-        <p>Nie udało się załadować automatycznie (plik nie istnieje lub przeglądarka blokuje dostęp do dysku).</p>
-        <p>Wybierz plik <b>rodzina.json</b> ręcznie:</p>
-        <input type="file" id="wczytajPlik" accept=".json">
-    </div>
-
     <div id="drzewo"></div>
 
     <script type="text/javascript">
-        // 1. PRÓBA AUTOMATYCZNEGO ZAŁADOWANIA (Gdy otwierasz stronę)
-        async function sprobujZaladowacAutomatycznie() {
+        // 1. GŁÓWNA FUNKCJA POBIERAJĄCA DANE
+        async function zaladujDane() {
             try {
-                // Szukamy pliku w tym samym miejscu, w którym jest strona
-                let odpowiedz = await fetch('rodzina.json');
+                // Wymuszamy ominięcie cache przez doklejenie czasu
+                let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime(), { cache: "no-store" });
                 
-                // Jeśli plik nie istnieje (np. błąd 404), nie wyrzucamy błędu w konsoli
-                if (!odpowiedz.ok) {
-                    pokazPanelAwaryjny();
-                    return;
+                if (odpowiedz.ok) {
+                    let daneRodziny = await odpowiedz.json();
+                    rysujGraf(daneRodziny);
+                } else {
+                    console.error("Nie znaleziono pliku na serwerze GitHuba.");
                 }
-
-                // Sukces! Mamy plik, zamieniamy go na dane i rysujemy
-                let daneRodziny = await odpowiedz.json();
-                document.getElementById('komunikat').style.display = 'none'; // Chowamy napis
-                rysujGraf(daneRodziny);
-
             } catch (error) {
-                // Tutaj trafiamy, jeśli przeglądarka zablokowała odczyt (zabezpieczenia lokalnego dysku)
-                pokazPanelAwaryjny();
+                console.error("Błąd połączenia:", error);
             }
         }
 
-        // 2. AWARYJNE ŁADOWANIE RĘCZNE (Przez przycisk)
-        document.getElementById('wczytajPlik').addEventListener('change', function(event) {
-            var plik = event.target.files[0];
-            if (!plik) return;
-
-            var czytnik = new FileReader();
-            czytnik.onload = function(e) {
-                var zawartosc = e.target.result;
-                var daneRodziny = JSON.parse(zawartosc); // Odczytujemy JSON z pliku
-                
-                document.getElementById('komunikat').style.display = 'none';
-                document.getElementById('panel-awaryjny').style.display = 'none';
-                
-                rysujGraf(daneRodziny);
-            };
-            czytnik.readAsText(plik);
-        });
-
-        function pokazPanelAwaryjny() {
-            document.getElementById('komunikat').style.display = 'none';
-            document.getElementById('panel-awaryjny').style.display = 'block';
-        }
-
-        // 3. GŁÓWNA FUNKCJA RYSUJĄCA GRAF
+        // 2. FUNKCJA RYSUJĄCA DRZEWO Z T-JUNCTION (POŁĄCZENIE RODZICÓW)
         function rysujGraf(daneRodziny) {
             var wezly = [];
             var krawedzie = [];
+            var unie = {}; // Słownik do zapisywania połączonych par rodziców
 
             daneRodziny.forEach(function(osoba) {
-                // Tworzymy osobę na grafie
+                // Tworzymy główny kafelek dla osoby (ciemny motyw)
                 wezly.push({
                     id: osoba.Id,
                     label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
                     shape: 'box',
-                    color: '#aed9e0',
-                    font: { size: 16 }
+                    color: {
+                        background: '#2c3e50', // Ciemny niebiesko-szary
+                        border: '#34495e',
+                        highlight: { background: '#3498db', border: '#2980b9' }
+                    },
+                    font: { size: 16, color: '#ffffff' }, // Biały tekst
+                    margin: 10
                 });
 
-                // Rysujemy strzałki od rodziców (jeśli ich ID nie jest puste)
-                if (osoba.IdOjca !== null) {
-                    krawedzie.push({ from: osoba.IdOjca, to: osoba.Id, arrows: 'to' });
-                }
-                if (osoba.IdMatki !== null) {
-                    krawedzie.push({ from: osoba.IdMatki, to: osoba.Id, arrows: 'to' });
-                }
-            });
+                // Sprawdzamy, czy osoba ma oboje rodziców, żeby połączyć ich kreską
+                if (osoba.IdOjca !== null && osoba.IdMatki !== null) {
+                    
+                    // Tworzymy unikalne ID dla związku (żeby nie powielać kresek przy rodzeństwie)
+                    let r1 = osoba.IdOjca;
+                    let r2 = osoba.IdMatki;
+                    let idUnii = "unia_" + (r1 < r2 ? r1 + "_" + r2 : r2 + "_" + r1);
 
-            // Ustawienia układu (żeby wyglądało jak drzewo z góry na dół)
-            var pojemnik = document.getElementById('drzewo');
-            var daneGrafu = { nodes: new vis.DataSet(wezly), edges: new vis.DataSet(krawedzie) };
-            var opcje = {
-                layout: { hierarchical: { direction: 'UD', sortMethod: 'directed' } },
-                physics: false // Wyłączamy animację grawitacji
-            };
+                    // Jeśli ta para nie ma jeszcze węzła małżeństwa, tworzymy go
+                    if (!unie[idUnii]) {
+                        unie[idUnii] = true;
+                        // Niewidzialny punkt złączenia między rodzicami
+                        wezly.push({ id: idUnii, shape: 'dot', size: 1, color: '#888888', label: '' });
+                        
+                        // Kreski poziome od rodziców do punktu złączenia (bez grotów)
+                        krawedzie.push({ from: r1, to: idUnii, arrows: '', color: '#888888' });
+                        krawedzie.push({ from: r2, to: idUnii, arrows: '', color: '#888888' });
+                    }
 
-            new vis.Network(pojemnik, daneGrafu, opcje);
-        }
+                    // Kreska od złączenia (małżeństwa) w dół do dziecka
+                    krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
 
-        // Uruchamiamy próbę pobrania przy starcie
-        sprobujZaladowacAutomatycznie();
-    </script>
-</body>
-</html>
+                } else {
+                    // Jeśli jest
