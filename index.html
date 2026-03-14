@@ -43,18 +43,15 @@
     var unie = {}; 
     var narysowaneZwiazki = new Set();
 
-    // Mapowanie roczników
-    var poziomy = {};
-    daneRodziny.forEach(o => { poziomy[o.Id] = o.RokUrodzenia; });
-
     daneRodziny.forEach(function(osoba) {
         let lata = osoba.RokUrodzenia + (osoba.RokSmierci ? " - " + osoba.RokSmierci : "");
 
+        // DODAJEMY OSOBĘ (Bez pola 'level'!)
         wezly.push({
             id: osoba.Id,
             label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + lata,
             shape: 'box',
-            widthConstraint: { minimum: 140, maximum: 140 }, // Stała szerokość pomaga w wyrównaniu
+            widthConstraint: { minimum: 140, maximum: 140 },
             color: { 
                 background: osoba.RokSmierci ? '#1a252f' : '#2c3e50', 
                 border: '#34495e' 
@@ -62,38 +59,35 @@
             font: { color: '#ffffff', size: 14 }
         });
 
-        // Łączenie rodziców i dzieci
+        // ŁĄCZENIE RODZICÓW I DZIECI
         if (osoba.IdOjca && osoba.IdMatki) {
-            let para = [osoba.IdOjca, osoba.IdMatki].sort().join('_');
+            let para = [osoba.IdOjca, osoba.IdMatki].sort((a, b) => a - b).join('_');
             let idUnii = "unia_" + para;
 
             if (!unie[idUnii]) {
                 unie[idUnii] = true;
-                // Kropka unii musi być niżej niż rodzice, ale wyżej niż dziecko
-                // Przesunięcie o 4 "lata" w dół pod rodziców
-                let poziomUnii = Math.max(poziomy[osoba.IdOjca], poziomy[osoba.IdMatki]) + 4;
                 
+                // DODAJEMY KROPKĘ UNII (Bez pola 'level'!)
                 wezly.push({ 
                     id: idUnii, 
-                    level: poziomUnii, 
-                    shape: 'dot', size: 0, color: 'rgba(0,0,0,0)' 
+                    shape: 'dot', 
+                    size: 0, 
+                    color: 'rgba(0,0,0,0)' 
                 });
                 
                 krawedzie.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888888' });
                 krawedzie.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888888' });
             }
-            // Linia do dziecka
             krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
 
         } else if (osoba.IdOjca || osoba.IdMatki) {
-            // Samotny rodzic
             let parentId = osoba.IdOjca || osoba.IdMatki;
             krawedzie.push({ from: parentId, to: osoba.Id, arrows: 'to', color: '#888888' });
         }
 
-        // Małżeństwo bezdzietne
+        // MAŁŻEŃSTWO BEZDZIETNE
         if (osoba.IdPartnera) {
-            let para = [osoba.Id, osoba.IdPartnera].sort().join('_');
+            let para = [osoba.Id, osoba.IdPartnera].sort((a, b) => a - b).join('_');
             let maDzieci = daneRodziny.some(d => (d.IdOjca == osoba.Id && d.IdMatki == osoba.IdPartnera) || (d.IdMatki == osoba.Id && d.IdOjca == osoba.IdPartnera));
             
             if (!narysowaneZwiazki.has(para) && !maDzieci) {
@@ -104,28 +98,25 @@
     });
 
     var opcje = {
-    layout: { 
-        hierarchical: { 
-            direction: 'UD', 
-            sortMethod: 'directed',
-            levelSeparation: 150, // SZTYWNY odstęp między pokoleniami (w pikselach, nie w latach)
-            nodeSpacing: 300,    // Szerokość między kafelkami
-            parentCentralization: true
-        } 
-    },
-    physics: false, // Wyłączamy fizykę, żeby graf nie "uciekał"
-    nodes: {
-        margin: 10 // Dodatkowy margines wewnątrz kafelka
-    },
-    edges: {
-        smooth: { 
-            type: 'cubicBezier', 
-            forceDirection: 'vertical', 
-            roundness: 0.5 
+        layout: { 
+            hierarchical: { 
+                direction: 'UD', 
+                sortMethod: 'directed', // Biblioteka sama wyliczy poziomy na podstawie krawędzi
+                levelSeparation: 150, 
+                nodeSpacing: 250,
+                parentCentralization: true
+            } 
         },
-        color: '#888888'
-    }
-};
+        physics: false,
+        edges: {
+            smooth: { 
+                type: 'cubicBezier', 
+                forceDirection: 'vertical', 
+                roundness: 0.5 
+            }
+        }
+    };
+
     new vis.Network(document.getElementById('drzewo'), { nodes: wezly, edges: krawedzie }, opcje);
 }
 
