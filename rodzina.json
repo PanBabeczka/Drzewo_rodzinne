@@ -98,5 +98,25 @@
     "Nazwisko": "kozak",
     "RokUrodzenia": 1945,
     "RokSmierci": null
+  },
+  {
+    "Id": 11,
+    "IdOjca": 3,
+    "IdMatki": 4,
+    "IdPartnera": null,
+    "Imie": "andrzeja",
+    "Nazwisko": "boryczko",
+    "RokUrodzenia": 2026,
+    "RokSmierci": null
+  },
+  {
+    "Id": 12,
+    "IdOjca": 2,
+    "IdMatki": 1,
+    "IdPartnera": null,
+    "Imie": "Alina",
+    "Nazwisko": "",
+    "RokUrodzenia": 1999,
+    "RokSmierci": null
   }
 ]
