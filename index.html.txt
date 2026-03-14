@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Moje Drzewo Genealogiczne</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f8f9fa; }
+        #drzewo { 
+            width: 90%; 
+            height: 700px; 
+            border: 1px solid #d1d5db; 
+            margin: 20px auto; 
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #panel-awaryjny { display: none; margin: 20px; padding: 15px; background: #ffeeba; border-radius: 8px; }
+        #komunikat { font-weight: bold; color: #555; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Moje Drzewo Genealogiczne</h2>
+    
+    <div id="komunikat">Szukam pliku rodzina.json...</div>
+
+    <div id="panel-awaryjny">
+        <p>Nie udało się załadować automatycznie (plik nie istnieje lub przeglądarka blokuje dostęp do dysku).</p>
+        <p>Wybierz plik <b>rodzina.json</b> ręcznie:</p>
+        <input type="file" id="wczytajPlik" accept=".json">
+    </div>
+
+    <div id="drzewo"></div>
+
+    <script type="text/javascript">
+        // 1. PRÓBA AUTOMATYCZNEGO ZAŁADOWANIA (Gdy otwierasz stronę)
+        async function sprobujZaladowacAutomatycznie() {
+            try {
+                // Szukamy pliku w tym samym miejscu, w którym jest strona
+                let odpowiedz = await fetch('rodzina.json');
+                
+                // Jeśli plik nie istnieje (np. błąd 404), nie wyrzucamy błędu w konsoli
+                if (!odpowiedz.ok) {
+                    pokazPanelAwaryjny();
+                    return;
+                }
+
+                // Sukces! Mamy plik, zamieniamy go na dane i rysujemy
+                let daneRodziny = await odpowiedz.json();
+                document.getElementById('komunikat').style.display = 'none'; // Chowamy napis
+                rysujGraf(daneRodziny);
+
+            } catch (error) {
+                // Tutaj trafiamy, jeśli przeglądarka zablokowała odczyt (zabezpieczenia lokalnego dysku)
+                pokazPanelAwaryjny();
+            }
+        }
+
+        // 2. AWARYJNE ŁADOWANIE RĘCZNE (Przez przycisk)
+        document.getElementById('wczytajPlik').addEventListener('change', function(event) {
+            var plik = event.target.files[0];
+            if (!plik) return;
+
+            var czytnik = new FileReader();
+            czytnik.onload = function(e) {
+                var zawartosc = e.target.result;
+                var daneRodziny = JSON.parse(zawartosc); // Odczytujemy JSON z pliku
+                
+                document.getElementById('komunikat').style.display = 'none';
+                document.getElementById('panel-awaryjny').style.display = 'none';
+                
+                rysujGraf(daneRodziny);
+            };
+            czytnik.readAsText(plik);
+        });
+
+        function pokazPanelAwaryjny() {
+            document.getElementById('komunikat').style.display = 'none';
+            document.getElementById('panel-awaryjny').style.display = 'block';
+        }
+
+        // 3. GŁÓWNA FUNKCJA RYSUJĄCA GRAF
+        function rysujGraf(daneRodziny) {
+            var wezly = [];
+            var krawedzie = [];
+
+            daneRodziny.forEach(function(osoba) {
+                // Tworzymy osobę na grafie
+                wezly.push({
+                    id: osoba.Id,
+                    label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
+                    shape: 'box',
+                    color: '#aed9e0',
+                    font: { size: 16 }
+                });
+
+                // Rysujemy strzałki od rodziców (jeśli ich ID nie jest puste)
+                if (osoba.IdOjca !== null) {
+                    krawedzie.push({ from: osoba.IdOjca, to: osoba.Id, arrows: 'to' });
+                }
+                if (osoba.IdMatki !== null) {
+                    krawedzie.push({ from: osoba.IdMatki, to: osoba.Id, arrows: 'to' });
+                }
+            });
+
+            // Ustawienia układu (żeby wyglądało jak drzewo z góry na dół)
+            var pojemnik = document.getElementById('drzewo');
+            var daneGrafu = { nodes: new vis.DataSet(wezly), edges: new vis.DataSet(krawedzie) };
+            var opcje = {
+                layout: { hierarchical: { direction: 'UD', sortMethod: 'directed' } },
+                physics: false // Wyłączamy animację grawitacji
+            };
+
+            new vis.Network(pojemnik, daneGrafu, opcje);
+        }
+
+        // Uruchamiamy próbę pobrania przy starcie
+        sprobujZaladowacAutomatycznie();
+    </script>
+</body>
+</html>

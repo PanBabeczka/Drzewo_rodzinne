@@ -1,0 +1,50 @@
+[
+  {
+    "Id": 1,
+    "IdOjca": null,
+    "IdMatki": null,
+    "Imie": "Jan",
+    "Nazwisko": "Kowalski",
+    "RokUrodzenia": 1950
+  },
+  {
+    "Id": 2,
+    "IdOjca": null,
+    "IdMatki": null,
+    "Imie": "Anna",
+    "Nazwisko": "Kowalska",
+    "RokUrodzenia": 1952
+  },
+  {
+    "Id": 3,
+    "IdOjca": 1,
+    "IdMatki": 2,
+    "Imie": "Tomasz",
+    "Nazwisko": "Kowalski",
+    "RokUrodzenia": 1975
+  },
+  {
+    "Id": 4,
+    "IdOjca": 6,
+    "IdMatki": null,
+    "Imie": "Maria",
+    "Nazwisko": "Nowak",
+    "RokUrodzenia": 1978
+  },
+  {
+    "Id": 5,
+    "IdOjca": 3,
+    "IdMatki": 4,
+    "Imie": "Piotr",
+    "Nazwisko": "Kowalski",
+    "RokUrodzenia": 2002
+  },
+  {
+    "Id": 6,
+    "IdOjca": null,
+    "IdMatki": null,
+    "Imie": "Stefan",
+    "Nazwisko": "Nowak",
+    "RokUrodzenia": 1945
+  }
+]
