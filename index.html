@@ -5,12 +5,11 @@
     <title>Moje Drzewo Genealogiczne</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
-        /* Włączony Dark Mode z automatu */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             text-align: center; 
-            background-color: #121212; /* Ciemne tło */
-            color: #e0e0e0; /* Jasny tekst */
+            background-color: #121212; 
+            color: #e0e0e0; 
             margin: 0;
             padding: 20px;
         }
@@ -18,9 +17,9 @@
         #drzewo { 
             width: 95%; 
             height: 750px; 
-            border: 1px solid #333; /* Ciemniejsza ramka */
+            border: 1px solid #333; 
             margin: 20px auto; 
-            background-color: #1e1e1e; /* Tło obszaru roboczego grafu */
+            background-color: #1e1e1e; 
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
@@ -31,14 +30,11 @@
 <body>
 
     <h2>Moje Drzewo Genealogiczne</h2>
-    
     <div id="drzewo"></div>
 
     <script type="text/javascript">
-        // 1. GŁÓWNA FUNKCJA POBIERAJĄCA DANE
         async function zaladujDane() {
             try {
-                // Wymuszamy ominięcie cache przez doklejenie czasu
                 let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime(), { cache: "no-store" });
                 
                 if (odpowiedz.ok) {
@@ -52,48 +48,67 @@
             }
         }
 
-        // 2. FUNKCJA RYSUJĄCA DRZEWO Z T-JUNCTION (POŁĄCZENIE RODZICÓW)
         function rysujGraf(daneRodziny) {
             var wezly = [];
             var krawedzie = [];
-            var unie = {}; // Słownik do zapisywania połączonych par rodziców
+            
+            // ZABEZPIECZENIE: Zbieramy wszystkie prawdziwe ID osób, które istnieją w pliku
+            var dostepneId = new Set();
+            daneRodziny.forEach(osoba => dostepneId.add(osoba.Id));
 
             daneRodziny.forEach(function(osoba) {
-                // Tworzymy główny kafelek dla osoby (ciemny motyw)
                 wezly.push({
                     id: osoba.Id,
                     label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
                     shape: 'box',
                     color: {
-                        background: '#2c3e50', // Ciemny niebiesko-szary
+                        background: '#2c3e50',
                         border: '#34495e',
                         highlight: { background: '#3498db', border: '#2980b9' }
                     },
-                    font: { size: 16, color: '#ffffff' }, // Biały tekst
+                    font: { size: 16, color: '#ffffff' },
                     margin: 10
                 });
 
-                // Sprawdzamy, czy osoba ma oboje rodziców, żeby połączyć ich kreską
-                if (osoba.IdOjca !== null && osoba.IdMatki !== null) {
-                    
-                    // Tworzymy unikalne ID dla związku (żeby nie powielać kresek przy rodzeństwie)
-                    let r1 = osoba.IdOjca;
-                    let r2 = osoba.IdMatki;
-                    let idUnii = "unia_" + (r1 < r2 ? r1 + "_" + r2 : r2 + "_" + r1);
+                // ZABEZPIECZENIE: Sprawdzamy, czy IdOjca/Matki nie jest puste, nie jest zerem 
+                // i przede wszystkim - czy taka osoba w ogóle istnieje w naszym drzewie!
+                let maOjca = osoba.IdOjca !== null && osoba.IdOjca !== 0 && dostepneId.has(osoba.IdOjca);
+                let maMatke = osoba.IdMatki !== null && osoba.IdMatki !== 0 && dostepneId.has(osoba.IdMatki);
 
-                    // Jeśli ta para nie ma jeszcze węzła małżeństwa, tworzymy go
-                    if (!unie[idUnii]) {
-                        unie[idUnii] = true;
-                        // Niewidzialny punkt złączenia między rodzicami
-                        wezly.push({ id: idUnii, shape: 'dot', size: 1, color: '#888888', label: '' });
-                        
-                        // Kreski poziome od rodziców do punktu złączenia (bez grotów)
-                        krawedzie.push({ from: r1, to: idUnii, arrows: '', color: '#888888' });
-                        krawedzie.push({ from: r2, to: idUnii, arrows: '', color: '#888888' });
+                if (maOjca) {
+                    krawedzie.push({ from: osoba.IdOjca, to: osoba.Id, arrows: 'to', color: '#888888' });
+                }
+                if (maMatke) {
+                    krawedzie.push({ from: osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888888' });
+                }
+            });
+
+            var pojemnik = document.getElementById('drzewo');
+            var daneGrafu = { nodes: new vis.DataSet(wezly), edges: new vis.DataSet(krawedzie) };
+            
+            var opcje = {
+                layout: { 
+                    hierarchical: { 
+                        direction: 'UD', 
+                        sortMethod: 'directed',
+                        levelSeparation: 150, 
+                        nodeSpacing: 200      
+                    } 
+                },
+                edges: {
+                    smooth: {
+                        type: 'cubicBezier', // Zamiast sztywnych kątów prostych (które psuły graf), dajemy ładne, pionowe krzywe
+                        forceDirection: 'vertical',
+                        roundness: 0.5
                     }
+                },
+                physics: false 
+            };
 
-                    // Kreska od złączenia (małżeństwa) w dół do dziecka
-                    krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
+            new vis.Network(pojemnik, daneGrafu, opcje);
+        }
 
-                } else {
-                    // Jeśli jest
+        zaladujDane();
+    </script>
+</body>
+</html>
