@@ -3,64 +3,80 @@
     "Id": 1,
     "IdOjca": null,
     "IdMatki": null,
+    "IdPartnera": null,
     "Imie": "Andrzej",
     "Nazwisko": "Trocha",
-    "RokUrodzenia": 1950
+    "RokUrodzenia": 1950,
+    "RokSmierci": null
   },
   {
     "Id": 2,
     "IdOjca": null,
     "IdMatki": null,
+    "IdPartnera": null,
     "Imie": "Ma\u0142gorzata",
     "Nazwisko": "Trocha",
-    "RokUrodzenia": 1955
+    "RokUrodzenia": 1955,
+    "RokSmierci": null
   },
   {
     "Id": 3,
     "IdOjca": 8,
     "IdMatki": null,
+    "IdPartnera": null,
     "Imie": "Patryk",
     "Nazwisko": "Boryczko",
-    "RokUrodzenia": 1980
+    "RokUrodzenia": 1980,
+    "RokSmierci": null
   },
   {
     "Id": 4,
     "IdOjca": 1,
     "IdMatki": 2,
+    "IdPartnera": null,
     "Imie": "katarzyna",
     "Nazwisko": "boryczko",
-    "RokUrodzenia": 1984
+    "RokUrodzenia": 1984,
+    "RokSmierci": null
   },
   {
     "Id": 5,
     "IdOjca": 3,
     "IdMatki": 4,
+    "IdPartnera": null,
     "Imie": "Piotr",
     "Nazwisko": "boryczko",
-    "RokUrodzenia": 2007
+    "RokUrodzenia": 2007,
+    "RokSmierci": null
   },
   {
     "Id": 8,
     "IdOjca": null,
     "IdMatki": null,
+    "IdPartnera": null,
     "Imie": "Gerard",
     "Nazwisko": "Boryczko",
-    "RokUrodzenia": 1945
+    "RokUrodzenia": 1945,
+    "RokSmierci": null
   },
   {
     "Id": 6,
-    "IdOjca": null,
-    "IdMatki": null,
+    "IdOjca": 3,
+    "IdMatki": 4,
+    "IdPartnera": null,
     "Imie": "Pawe\u0142",
     "Nazwisko": "boryczko",
-    "RokUrodzenia": 2003
+    "RokUrodzenia": 2003,
+    "RokSmierci": null
   },
   {
     "Id": 7,
     "IdOjca": null,
     "IdMatki": null,
+    "IdPartnera": null,
     "Imie": "Nina",
     "Nazwisko": "Dymek",
-    "RokUrodzenia": 2003
+    "RokUrodzenia": 2003,
+    "RokSmierci": null
   }
 ]
