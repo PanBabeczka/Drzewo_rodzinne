@@ -111,13 +111,16 @@
     var opcje = {
         layout: { 
             hierarchical: { 
+                enabled: true,
                 direction: 'UD', 
                 sortMethod: 'directed',
-                levelSeparation: 10, // 10px na każdy rok życia. 20 lat = 200px odstępu.
-                nodeSpacing: 250,    // Szerokość między gałęziami
-                parentCentralization: true,
-                blockShifting: true,
-                edgeMinimization: true
+                levelSeparation: 10,
+                shakeTowards: 'leaves',// 10px na każdy rok życia. 20 lat = 200px odstępu.
+                nodeSpacing: 500,    // Szerokość między gałęziami
+                parentCentralization: false,
+                blockShifting: false, // Zapobiega "prostowaniu" gałęzi do jednej linii
+                edgeMinimization: false
+                
             } 
         },
         physics: false,
