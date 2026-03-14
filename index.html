@@ -55,22 +55,10 @@
             var dostepneId = new Set();
             daneRodziny.forEach(osoba => dostepneId.add(osoba.Id));
 
-            // Mapowanie osi Y na roczniki
+            // Mapowanie osi Y na roczniki (każdy zostaje tam, gdzie jego wiek!)
             var poziomy = {};
             daneRodziny.forEach(osoba => { 
                 poziomy[osoba.Id] = osoba.RokUrodzenia > 0 ? osoba.RokUrodzenia : 2000; 
-            });
-
-            // Wyrównanie małżonków do tego samego rocznika (starszego z nich)
-            daneRodziny.forEach(osoba => {
-                let idOjca = osoba.IdOjca;
-                let idMatki = osoba.IdMatki;
-
-                if (idOjca && idMatki && dostepneId.has(idOjca) && dostepneId.has(idMatki)) {
-                    let wyzszyPoziom = Math.min(poziomy[idOjca], poziomy[idMatki]);
-                    poziomy[idOjca] = wyzszyPoziom;
-                    poziomy[idMatki] = wyzszyPoziom;
-                }
             });
 
             var unie = {}; 
@@ -92,8 +80,8 @@
                 let maOjca = idOjca !== null && idOjca !== 0 && dostepneId.has(idOjca);
                 let maMatke = idMatki !== null && idMatki !== 0 && dostepneId.has(idMatki);
 
-                // Wspólny kod dla równego rysowania krzywych
-                let stylKreski = { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0 };
+                // Bardzo delikatny łuk pozwala linii omijać kafelki
+                let stylKreski = { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.3 };
 
                 if (maOjca && maMatke) {
                     let idUnii = "unia_" + (idOjca < idMatki ? idOjca + "_" + idMatki : idMatki + "_" + idOjca);
@@ -101,20 +89,28 @@
                     if (!unie[idUnii]) {
                         unie[idUnii] = true;
                         
-                        // Kropka węzła wyląduje 5 "lat" pod rodzicami, żeby linie ładnie wyszły dołem
+                        // Szukamy rocznika tego z rodziców, który urodził się później
+                        let najmlodszyRodzic = Math.max(poziomy[idOjca], poziomy[idMatki]);
+                        
+                        // Kropka węzła ląduje zawsze rygorystycznie pod młodszym rodzicem (+4 "lata" niżej)
                         wezly.push({ 
                             id: idUnii, 
-                            level: poziomy[idOjca] + 5, 
+                            level: najmlodszyRodzic + 4, 
                             shape: 'dot', 
                             size: 0, 
                             color: 'rgba(0,0,0,0)', 
                             label: '' 
                         });
                         
+                        // NIEWIDZIALNA SPRĘŻYNA: Wymuszamy układanie partnerów obok siebie w poziomie
+                        krawedzie.push({ from: idOjca, to: idMatki, color: 'rgba(0,0,0,0)', arrows: '', physics: false });
+
+                        // Prowadzenie linii do kropki
                         krawedzie.push({ from: idOjca, to: idUnii, arrows: '', color: '#888888', smooth: stylKreski });
                         krawedzie.push({ from: idMatki, to: idUnii, arrows: '', color: '#888888', smooth: stylKreski });
                     }
                     
+                    // Prowadzenie linii od kropki do dziecka
                     krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888', smooth: stylKreski });
 
                 } else {
@@ -130,7 +126,7 @@
                 layout: { 
                     hierarchical: { 
                         direction: 'UD', 
-                        levelSeparation: 8, // <-- KOMPRESJA OSI CZASU: 8 pikseli na 1 rok
+                        levelSeparation: 15, // Optymalny balans przestrzeni między pokoleniami
                         nodeSpacing: 250,     
                         treeSpacing: 300,
                         parentCentralization: true 
