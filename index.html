@@ -52,11 +52,15 @@
             var wezly = [];
             var krawedzie = [];
             
-            // ZABEZPIECZENIE: Zbieramy wszystkie prawdziwe ID osób, które istnieją w pliku
+            // Zbieramy dostępne ID, by uniknąć błędów
             var dostepneId = new Set();
             daneRodziny.forEach(osoba => dostepneId.add(osoba.Id));
 
+            // Słownik, który zapamięta, czy już narysowaliśmy węzeł między danymi rodzicami
+            var unie = {}; 
+
             daneRodziny.forEach(function(osoba) {
+                // Rysujemy główny kafelek osoby
                 wezly.push({
                     id: osoba.Id,
                     label: osoba.Imie + ' ' + osoba.Nazwisko + '\nUr: ' + osoba.RokUrodzenia,
@@ -70,16 +74,46 @@
                     margin: 10
                 });
 
-                // ZABEZPIECZENIE: Sprawdzamy, czy IdOjca/Matki nie jest puste, nie jest zerem 
-                // i przede wszystkim - czy taka osoba w ogóle istnieje w naszym drzewie!
-                let maOjca = osoba.IdOjca !== null && osoba.IdOjca !== 0 && dostepneId.has(osoba.IdOjca);
-                let maMatke = osoba.IdMatki !== null && osoba.IdMatki !== 0 && dostepneId.has(osoba.IdMatki);
+                let idOjca = osoba.IdOjca;
+                let idMatki = osoba.IdMatki;
 
-                if (maOjca) {
-                    krawedzie.push({ from: osoba.IdOjca, to: osoba.Id, arrows: 'to', color: '#888888' });
-                }
-                if (maMatke) {
-                    krawedzie.push({ from: osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888888' });
+                let maOjca = idOjca !== null && idOjca !== 0 && dostepneId.has(idOjca);
+                let maMatke = idMatki !== null && idMatki !== 0 && dostepneId.has(idMatki);
+
+                // --- GŁÓWNA MAGIA: ŁĄCZENIE RODZICÓW ---
+                if (maOjca && maMatke) {
+                    // Generujemy unikalny identyfikator dla ich związku
+                    let idUnii = "unia_" + (idOjca < idMatki ? idOjca + "_" + idMatki : idMatki + "_" + idOjca);
+
+                    // Jeśli jeszcze nie połączyliśmy tych rodziców (bo np. to ich pierwsze dziecko w pętli)
+                    if (!unie[idUnii]) {
+                        unie[idUnii] = true;
+                        
+                        // Dodajemy na graf małą kropkę symbolizującą ich związek
+                        wezly.push({ 
+                            id: idUnii, 
+                            shape: 'dot', 
+                            size: 3, 
+                            color: '#888888', 
+                            label: '' 
+                        });
+                        
+                        // Rysujemy poziome linie od ojca i matki do tej kropki (bez strzałek na końcu)
+                        krawedzie.push({ from: idOjca, to: idUnii, arrows: '', color: '#888888' });
+                        krawedzie.push({ from: idMatki, to: idUnii, arrows: '', color: '#888888' });
+                    }
+                    
+                    // Rysujemy pionową linię od kropki związku do dziecka
+                    krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
+
+                } else {
+                    // Jeśli w bazie jest tylko jeden rodzic, rysujemy klasyczną linię
+                    if (maOjca) {
+                        krawedzie.push({ from: idOjca, to: osoba.Id, arrows: 'to', color: '#888888' });
+                    }
+                    if (maMatke) {
+                        krawedzie.push({ from: idMatki, to: osoba.Id, arrows: 'to', color: '#888888' });
+                    }
                 }
             });
 
@@ -89,17 +123,17 @@
             var opcje = {
                 layout: { 
                     hierarchical: { 
-                        direction: 'UD', 
+                        direction: 'UD', // Grawitacja z góry na dół
                         sortMethod: 'directed',
-                        levelSeparation: 150, 
-                        nodeSpacing: 200      
+                        levelSeparation: 120, // Zmniejszyłem lekko wysokość, by kropka związku lepiej wyglądała
+                        nodeSpacing: 180      
                     } 
                 },
                 edges: {
                     smooth: {
-                        type: 'cubicBezier', // Zamiast sztywnych kątów prostych (które psuły graf), dajemy ładne, pionowe krzywe
+                        type: 'cubicBezier', 
                         forceDirection: 'vertical',
-                        roundness: 0.5
+                        roundness: 0 // Zmiana na 0 robi ostre kąty (linie prostopadłe)!
                     }
                 },
                 physics: false 
