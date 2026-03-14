@@ -11,8 +11,8 @@
   },
   {
     "Id": 2,
-    "IdOjca": null,
-    "IdMatki": null,
+    "IdOjca": 9,
+    "IdMatki": 10,
     "IdPartnera": null,
     "Imie": "Ma\u0142gorzata",
     "Nazwisko": "Trocha",
