@@ -2,41 +2,20 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Interaktywne Drzewo Genealogiczne</title>
+    <title>Drzewo Genealogiczne - Układ T</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: #1a1a1a; 
-            color: white; 
-            margin: 0; 
-            overflow: hidden; 
-        }
-        #drzewo { 
-            width: 100vw; 
-            height: 100vh; 
-            background-color: #121212;
-        }
-        .header {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-            background: rgba(0,0,0,0.6);
-            padding: 15px;
-            border-radius: 8px;
-            pointer-events: none;
-            border: 1px solid #333;
-        }
-        h2 { margin: 0; color: #4dabf7; font-size: 1.5em; }
-        p { font-size: 0.85em; color: #aaa; margin: 5px 0 0 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: white; margin: 0; overflow: hidden; }
+        #drzewo { width: 100vw; height: 100vh; background-color: #121212; }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; pointer-events: none; border: 1px solid #444; }
+        h2 { margin: 0; color: #4dabf7; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>Drzewo Rodzinne</h2>
-        <p>Os Y: Rok urodzenia | Linie łączą się u rodziców</p>
+        <h2>Moje Drzewo</h2>
+        <p>Układ typu "T" na osi czasu</p>
     </div>
 
     <div id="drzewo"></div>
@@ -44,18 +23,13 @@
     <script type="text/javascript">
         async function zaladujDane() {
             try {
-                let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime());
-                if (odpowiedz.ok) {
-                    let dane = await odpowiedz.json();
-                    rysujGraf(dane);
-                }
-            } catch (e) { console.error("Błąd:", e); }
+                let odp = await fetch("rodzina.json?t=" + new Date().getTime());
+                if (odp.ok) { rysujGraf(await odp.json()); }
+            } catch (e) { console.error(e); }
         }
 
         function rysujGraf(daneRodziny) {
-            const container = document.getElementById('drzewo');
             const SKALA_Y = 15; 
-            
             let nodes = [];
             let edges = [];
             let unie = {}; 
@@ -63,72 +37,51 @@
             const lata = daneRodziny.map(o => o.RokUrodzenia).filter(r => r < 2100);
             const minRok = Math.min(...lata);
 
-            // 1. Tworzymy węzły osób
+            // 1. Tworzenie węzłów osób
             daneRodziny.forEach(osoba => {
                 let rok = osoba.RokUrodzenia > 2026 ? 2024 : osoba.RokUrodzenia;
-                let posY = (rok - minRok) * SKALA_Y;
-
                 nodes.push({
                     id: osoba.Id,
                     label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${osoba.RokUrodzenia}`,
                     shape: 'box',
-                    x: (Math.random() - 0.5) * 2000, 
-                    y: posY,
-                    fixed: { y: true, x: false }, 
-                    font: { multi: 'html', color: '#ffffff', size: 14 },
+                    x: (Math.random() - 0.5) * 2500,
+                    y: (rok - minRok) * SKALA_Y,
+                    fixed: { y: true, x: false },
+                    font: { multi: 'html', color: '#ffffff' },
                     color: { background: '#2c3e50', border: '#4dabf7' },
-                    margin: 10,
-                    widthConstraint: { minimum: 130, maximum: 180 }
+                    widthConstraint: { minimum: 130 }
                 });
             });
 
-            // 2. Tworzymy relacje i punkty złączenia (Unie)
+            // 2. Tworzenie "Mostków" (Litera T)
             daneRodziny.forEach(osoba => {
                 if (osoba.IdOjca && osoba.IdMatki) {
-                    // Tworzymy unikalny klucz dla pary rodziców
                     let para = [osoba.IdOjca, osoba.IdMatki].sort((a,b) => a-b).join('_');
                     let idUnii = "unia_" + para;
 
                     if (!unie[idUnii]) {
                         unie[idUnii] = true;
-                        
-                        // Znajdujemy rok młodszego rodzica, by unia była tuż pod nimi
                         let r1 = daneRodziny.find(o => o.Id == osoba.IdOjca).RokUrodzenia;
                         let r2 = daneRodziny.find(o => o.Id == osoba.IdMatki).RokUrodzenia;
-                        let rokUnii = Math.max(r1, r2) + 3; // 3 lata pod rodzicami
                         
+                        // Punkt unii na poziomie młodszego rodzica + mały margines (2 lata)
+                        let rokUnii = Math.max(r1, r2) + 2; 
+
                         nodes.push({
                             id: idUnii,
-                            x: (Math.random() - 0.5) * 2000,
                             y: (rokUnii - minRok) * SKALA_Y,
-                            shape: 'dot',
-                            size: 0,
-                            color: 'rgba(0,0,0,0)',
+                            shape: 'dot', size: 0, color: 'rgba(0,0,0,0)',
                             fixed: { y: true, x: false }
                         });
 
-                        // Linie od rodziców do punktu złączenia
-                        edges.push({ from: osoba.IdOjca, to: idUnii, color: '#666', arrows: '' });
-                        edges.push({ from: osoba.IdMatki, to: idUnii, color: '#666', arrows: '' });
+                        // Poziome ramiona litery T (bez strzałek)
+                        edges.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888', width: 2, smooth: { type: 'stepAfter' } });
+                        edges.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888', width: 2, smooth: { type: 'stepAfter' } });
                     }
-                    // Jedna linia od punktu złączenia do dziecka
-                    edges.push({ from: idUnii, to: osoba.Id, color: '#666', arrows: 'to' });
-
+                    // Pionowa nóżka litery T do dziecka
+                    edges.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888', width: 2, smooth: { type: 'stepBefore' } });
                 } else if (osoba.IdOjca || osoba.IdMatki) {
-                    // Samotny rodzic - bezpośrednia linia
-                    let rodzicId = osoba.IdOjca || osoba.IdMatki;
-                    edges.push({ from: rodzicId, to: osoba.Id, color: '#666', arrows: 'to' });
-                }
-
-                // Partnerstwo bezdzietne (linia przerywana)
-                if (osoba.IdPartnera && osoba.Id < osoba.IdPartnera) {
-                    let maDzieci = daneRodziny.some(d => d.IdOjca && d.IdMatki && 
-                        ((d.IdOjca == osoba.Id && d.IdMatki == osoba.IdPartnera) || 
-                         (d.IdMatki == osoba.Id && d.IdOjca == osoba.IdPartnera)));
-                    
-                    if (!maDzieci) {
-                        edges.push({ from: osoba.Id, to: osoba.IdPartnera, dashes: [5, 5], color: '#e67e22' });
-                    }
+                    edges.push({ from: osoba.IdOjca || osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888' });
                 }
             });
 
@@ -136,28 +89,15 @@
                 physics: {
                     enabled: true,
                     solver: 'repulsion',
-                    repulsion: {
-                        nodeDistance: 450, 
-                        centralGravity: 0,
-                        springLength: 200,
-                        damping: 0.2
-                    },
-                    stabilization: { iterations: 150 }
+                    repulsion: { nodeDistance: 400, centralGravity: 0, springLength: 200 }
                 },
                 edges: {
-                    smooth: {
-                        enabled: true,
-                        type: 'cubicBezier',
-                        forceDirection: 'vertical',
-                        roundness: 0.5
-                    }
-                },
-                interaction: { dragNodes: true, zoomView: true, dragView: true }
+                    smooth: { enabled: true, roundness: 0.3 }
+                }
             };
 
-            new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, options);
+            new vis.Network(document.getElementById('drzewo'), { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, options);
         }
-
         zaladujDane();
     </script>
 </body>
