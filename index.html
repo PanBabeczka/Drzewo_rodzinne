@@ -2,136 +2,143 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Moje Drzewo Genealogiczne</title>
+    <title>Interaktywne Drzewo Genealogiczne</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: #121212; 
-            color: #e0e0e0; 
-            margin: 0; padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #1a1a1a; 
+            color: white; 
+            margin: 0; 
+            overflow: hidden; 
         }
         #drzewo { 
-            width: 95%; height: 800px; 
-            border: 1px solid #333; margin: 20px auto; 
-            background-color: #1e1e1e; border-radius: 8px;
+            width: 100vw; 
+            height: 100vh; 
+            background-color: #121212;
         }
-        h2 { text-align: center; color: #ffffff; }
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        h2 { margin: 0; color: #4dabf7; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        p { font-size: 0.9em; color: #888; }
     </style>
 </head>
 <body>
 
-    <h2>Moje Drzewo Genealogiczne</h2>
+    <div class="header">
+        <h2>Drzewo Rodzinne</h2>
+        <p>Oś pionowa: Rok urodzenia</p>
+    </div>
+
     <div id="drzewo"></div>
 
     <script type="text/javascript">
-        async function zaladujDane() 
-        {
+        async function zaladujDane() {
             try {
-                // Dodajemy timestamp, aby przeglądarka nie cache'owała starego pliku JSON
+                // Fetch z timestampem, aby uniknąć cache
                 let odpowiedz = await fetch("rodzina.json?t=" + new Date().getTime());
                 if (odpowiedz.ok) {
                     let dane = await odpowiedz.json();
                     rysujGraf(dane);
                 }
-            } catch (e) { console.error("Błąd ładowania:", e); }
+            } catch (e) {
+                console.error("Błąd ładowania JSON:", e);
+            }
         }
 
         function rysujGraf(daneRodziny) {
-    var wezly = [];
-    var krawedzie = [];
-    var unie = {}; 
-    var narysowaneZwiazki = new Set();
+            const container = document.getElementById('drzewo');
+            const SKALA_Y = 15; // 1 rok = 15 pikseli wysokości
+            
+            let nodes = [];
+            let edges = [];
 
-    // 1. Mapowanie roczników do poziomów (żeby uniknąć gigantycznych przerw)
-    // Znajdujemy najstarszy rok, żeby zacząć od poziomu 0
-    let lata = daneRodziny.map(o => o.RokUrodzenia).filter(y => y < 2100); // ignorujemy błędy typu 2999
-    let minRok = Math.min(...lata);
+            // Znajdujemy najwcześniejszy rok, aby zacząć rysować od góry ekranu
+            const lata = daneRodziny.map(o => o.RokUrodzenia).filter(r => r < 2100);
+            const minRok = Math.min(...lata);
 
-    daneRodziny.forEach(function(osoba) {
-        let tekstLata = osoba.RokUrodzenia + (osoba.RokSmierci ? " - " + osoba.RokSmierci : "");
-        
-        // OBLICZANIE POZIOMU:
-        // Każdy rok to poziom. Jeśli damy levelSeparation: 10, to 20 lat różnicy = 200px.
-        // To wystarczy, by kafelki (wysokie na ok. 50px) się nie dotykały.
-        let mojPoziom = osoba.RokUrodzenia - minRok;
+            daneRodziny.forEach(osoba => {
+                // Obliczamy sztywną pozycję Y na podstawie roku
+                // Jeśli ktoś ma rok 2999 (błąd), ustawiamy go niżej (np. na rok 2024)
+                let rok = osoba.RokUrodzenia > 2026 ? 2024 : osoba.RokUrodzenia;
+                let posY = (rok - minRok) * SKALA_Y;
 
-        wezly.push({
-    id: osoba.Id,
-    label: osoba.Imie + ' ' + osoba.Nazwisko + '\n' + lata,
-    level: mojPoziom,
-    // Jeśli Id jest parzyste, dajemy na lewo (-200), jeśli nieparzyste na prawo (200)
-    // To zmusi bibliotekę do rozbicia tej pionowej linii.
-    x: (osoba.Id % 2 === 0) ? -200 : 200, 
-    shape: 'box',
-    // ... reszta Twoich opcji
-});
-
-        // ŁĄCZENIE RODZICÓW I DZIECI
-        if (osoba.IdOjca && osoba.IdMatki) {
-            let para = [osoba.IdOjca, osoba.IdMatki].sort((a, b) => a - b).join('_');
-            let idUnii = "unia_" + para;
-
-            if (!unie[idUnii]) {
-                unie[idUnii] = true;
-                
-                // Szukamy rocznika młodszego rodzica, by unia była tuż pod nimi
-                let rokOjca = daneRodziny.find(o => o.Id == osoba.IdOjca)?.RokUrodzenia || minRok;
-                let rokMatki = daneRodziny.find(o => o.Id == osoba.IdMatki)?.RokUrodzenia || minRok;
-                let poziomUnii = (Math.max(rokOjca, rokMatki) - minRok) + 5; // +5 lat pod rodzicami
-
-                wezly.push({ 
-                    id: idUnii, 
-                    level: poziomUnii,
-                    shape: 'dot', size: 0, color: 'rgba(0,0,0,0)' 
+                // Dodanie osoby
+                nodes.push({
+                    id: osoba.Id,
+                    label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${osoba.RokUrodzenia}${osoba.RokSmierci ? ' - '+osoba.RokSmierci : ''}`,
+                    shape: 'box',
+                    x: Math.random() * 100, // Losowy start X, fizyka zajmie się resztą
+                    y: posY,
+                    fixed: { y: true, x: false }, // Blokujemy pion (oś czasu), pozwalamy na ruch w poziomie
+                    font: { multi: 'html', color: '#ffffff', size: 14 },
+                    color: {
+                        background: '#2c3e50',
+                        border: '#4dabf7',
+                        highlight: { background: '#3498db', border: '#fff' }
+                    },
+                    margin: 10,
+                    widthConstraint: { minimum: 120, maximum: 180 }
                 });
-                
-                krawedzie.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888888' });
-                krawedzie.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888888' });
-            }
-            krawedzie.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888888' });
 
-        } else if (osoba.IdOjca || osoba.IdMatki) {
-            let parentId = osoba.IdOjca || osoba.IdMatki;
-            krawedzie.push({ from: parentId, to: osoba.Id, arrows: 'to', color: '#888888' });
+                // Relacje rodzicielskie (bez kropek unii - czyściej w trybie fizycznym)
+                if (osoba.IdOjca) {
+                    edges.push({ from: osoba.IdOjca, to: osoba.Id, color: '#555', arrows: 'to' });
+                }
+                if (osoba.IdMatki) {
+                    edges.push({ from: osoba.IdMatki, to: osoba.Id, color: '#555', arrows: 'to' });
+                }
+
+                // Partnerstwo (linia przerywana)
+                if (osoba.IdPartnera) {
+                    // Rysujemy tylko jedną linię dla pary (sprawdzamy ID by nie dublować)
+                    if (osoba.Id < osoba.IdPartnera) {
+                        edges.push({ 
+                            from: osoba.Id, 
+                            to: osoba.IdPartnera, 
+                            dashes: [5, 5], 
+                            color: '#e67e22', 
+                            arrows: '' 
+                        });
+                    }
+                }
+            });
+
+            const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+
+            const options = {
+                physics: {
+                    enabled: true,
+                    solver: 'repulsion',
+                    repulsion: {
+                        nodeDistance: 250, // Odstęp poziomy między kafelkami
+                        centralGravity: 0,
+                        springLength: 150,
+                        damping: 0.09
+                    },
+                    stabilization: { iterations: 150 }
+                },
+                edges: {
+                    smooth: {
+                        type: 'cubicBezier',
+                        forceDirection: 'vertical',
+                        roundness: 0.4
+                    }
+                },
+                interaction: {
+                    dragNodes: true,
+                    zoomView: true,
+                    dragView: true
+                }
+            };
+
+            new vis.Network(container, data, options);
         }
-
-        // Małżeństwo bezdzietne
-        if (osoba.IdPartnera) {
-            let para = [osoba.Id, osoba.IdPartnera].sort((a, b) => a - b).join('_');
-            if (!narysowaneZwiazki.has(para)) {
-                krawedzie.push({ from: osoba.Id, to: osoba.IdPartnera, arrows: '', color: '#555555', dashes: [5, 5] });
-                narysowaneZwiazki.add(para);
-            }
-        }
-    });
-
-    var opcje = {
-        layout: { 
-            hierarchical: { 
-                enabled: true,
-                direction: 'UD', 
-                sortMethod: 'directed',
-                levelSeparation: 10,
-                shakeTowards: 'leaves',// 10px na każdy rok życia. 20 lat = 200px odstępu.
-                nodeSpacing: 500,    // Szerokość między gałęziami
-                parentCentralization: false,
-                blockShifting: false, // Zapobiega "prostowaniu" gałęzi do jednej linii
-                edgeMinimization: false,
-                edgeSpacing: 200,         // Dodaje dystans między liniami
-                treeSpacing: 800,
-                sortMethod: 'hubsize'
-                
-            } 
-        },
-        physics: false,
-        edges: {
-            smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 }
-        }
-    };
-
-    new vis.Network(document.getElementById('drzewo'), { nodes: wezly, edges: krawedzie }, opcje);
-}
 
         zaladujDane();
     </script>
