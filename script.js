@@ -7,14 +7,13 @@ function toggleLegenda() {
 
 async function zaladujDane() {
     try {
-        let odp = await fetch("rodzina.json?t=" + new Date().getTime());
+        // Używamy no-store zamiast doklejania czasu ?t=...
+        let odp = await fetch("rodzina.json", { cache: "no-store" });
         if (odp.ok) { 
             rysujGraf(await odp.json()); 
-        } else {
-            console.error("Nie udało się załadować pliku rodzina.json");
         }
     } catch (e) { 
-        console.error("Błąd ładowania danych:", e); 
+        console.error("Błąd:", e); 
     }
 }
 
