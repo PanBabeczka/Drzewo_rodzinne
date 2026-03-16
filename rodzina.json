@@ -50,16 +50,6 @@
     "RokSmierci": null
   },
   {
-    "Id": 8,
-    "IdOjca": null,
-    "IdMatki": null,
-    "IdPartnera": null,
-    "Imie": "Gerard",
-    "Nazwisko": "Boryczko",
-    "RokUrodzenia": 1945,
-    "RokSmierci": null
-  },
-  {
     "Id": 6,
     "IdOjca": 3,
     "IdMatki": 4,
@@ -80,6 +70,16 @@
     "RokSmierci": null
   },
   {
+    "Id": 8,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": null,
+    "Imie": "Gerard",
+    "Nazwisko": "Boryczko",
+    "RokUrodzenia": 1945,
+    "RokSmierci": null
+  },
+  {
     "Id": 9,
     "IdOjca": null,
     "IdMatki": null,
@@ -87,7 +87,7 @@
     "Imie": "adolf",
     "Nazwisko": "hitler",
     "RokUrodzenia": 1940,
-    "RokSmierci": 2010
+    "RokSmierci": 2020
   },
   {
     "Id": 10,
