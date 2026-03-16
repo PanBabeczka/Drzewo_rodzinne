@@ -1,0 +1,73 @@
+/* Główne ustawienia strony */
+body {
+    font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+    background-color: #0f172a; /* Głęboki granat zamiast czerni */
+    color: #f8fafc;
+    margin: 0;
+    overflow: hidden;
+}
+
+#drzewo {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Nowoczesna legenda z efektem szkła (Glassmorphism) */
+.glass-panel {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    z-index: 100;
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px); /* Rozmycie tła */
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 250px;
+}
+
+.glass-panel.zminimalizowana {
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* Elementy wewnątrz legendy */
+.legenda-tresc h3 {
+    color: #38bdf8;
+    font-size: 1rem;
+    margin: 0 0 12px 0;
+}
+
+.legenda-item {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+.kwadrat { width: 16px; height: 16px; border-radius: 4px; margin-right: 12px; }
+.kwadrat.alive { background: #0369a1; border: 1px solid #38bdf8; }
+.kwadrat.deceased { background: #334155; border: 1px solid #94a3b8; }
+
+.linia.dashed { width: 30px; border-top: 2px dashed #f59e0b; margin-right: 10px; }
+.strzalka { border-left: 8px solid #94a3b8; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-right: 12px; }
+
+.hint { font-size: 11px; color: #64748b; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
+
+#toggle-btn {
+    background: #334155;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    float: right;
+}
