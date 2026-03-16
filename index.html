@@ -2,155 +2,27 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Drzewo Genealogiczne - Oś Czasu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktywne Drzewo Genealogiczne</title>
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: white; margin: 0; overflow: hidden; }
-        #drzewo { width: 100vw; height: 100vh; background-color: #121212; }
-        
-        #legenda {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            background: rgba(44, 62, 80, 0.9);
-            border: 1px solid #4dabf7;
-            border-radius: 8px;
-            padding: 10px;
-            transition: all 0.3s ease;
-            max-width: 220px;
-        }
-        #legenda.zminimalizowana {
-            width: 40px; height: 40px; padding: 0; overflow: hidden;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
-        .legenda-tresc { display: block; }
-        .zminimalizowana .legenda-tresc { display: none; }
-        .legenda-item { display: flex; align-items: center; margin: 8px 0; font-size: 13px; }
-        .linia { width: 30px; height: 2px; margin-right: 10px; }
-        .strzalka { border-left: 10px solid #888; width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-right: 10px; }
-        .kwadrat { width: 15px; height: 15px; margin-right: 10px; border: 1px solid #777; }
-
-        #toggle-btn {
-            background: none; border: none; color: #4dabf7; cursor: pointer;
-            float: right; font-weight: bold; font-size: 16px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="legenda">
+    <div id="legenda" class="glass-panel">
         <button id="toggle-btn" onclick="toggleLegenda()">−</button>
         <div class="legenda-tresc">
-            <b style="color: #4dabf7; display: block; margin-bottom: 10px;">Legenda</b>
+            <h3>Legenda</h3>
             <div class="legenda-item"><div class="strzalka"></div> Relacja rodzice-dzieci</div>
-            <div class="legenda-item"><div class="linia" style="border-top: 2px dashed #e67e22;"></div> Związek (bez dzieci)</div>
-            <div class="legenda-item"><div class="kwadrat" style="background: #2c3e50; border-color: #4dabf7;"></div> Osoba żyjąca</div>
-            <div class="legenda-item"><div class="kwadrat" style="background: #444; border-color: #888;"></div> Osoba zmarła</div>
-            <p style="font-size: 10px; color: #888; margin-top: 10px;">Pozycja pionowa = Rok urodzenia</p>
+            <div class="legenda-item"><div class="linia dashed"></div> Związek (bez dzieci)</div>
+            <div class="legenda-item"><div class="kwadrat alive"></div> Osoba żyjąca</div>
+            <div class="legenda-item"><div class="kwadrat deceased"></div> Osoba zmarła</div>
+            <p class="hint">Oś pionowa reprezentuje czas (rok urodzenia)</p>
         </div>
     </div>
 
     <div id="drzewo"></div>
 
-    <script type="text/javascript">
-        function toggleLegenda() {
-            const leg = document.getElementById('legenda');
-            const btn = document.getElementById('toggle-btn');
-            leg.classList.toggle('zminimalizowana');
-            btn.innerHTML = leg.classList.contains('zminimalizowana') ? "▲" : "−";
-        }
-
-        async function zaladujDane() {
-            try {
-                let odp = await fetch("rodzina.json?t=" + new Date().getTime());
-                if (odp.ok) { rysujGraf(await odp.json()); }
-            } catch (e) { console.error(e); }
-        }
-
-        function rysujGraf(daneRodziny) {
-            const SKALA_Y = 15; 
-            let nodes = [];
-            let edges = [];
-            let unie = {}; 
-
-            const lata = daneRodziny.map(o => o.RokUrodzenia).filter(r => r < 2100);
-            const minRok = Math.min(...lata);
-
-            daneRodziny.forEach(osoba => {
-                let rok = osoba.RokUrodzenia > 2026 ? 2024 : osoba.RokUrodzenia;
-                
-                // Formatuje tekst daty: "1940" lub "1940 - † 2010"
-                let infoData = osoba.RokUrodzenia;
-                if (osoba.RokSmierci) {
-                    infoData += ` - † ${osoba.RokSmierci}`;
-                }
-
-                nodes.push({
-                    id: osoba.Id,
-                    label: `<b>${osoba.Imie} ${osoba.Nazwisko}</b>\n${infoData}`,
-                    shape: 'box',
-                    x: (Math.random() - 0.5) * 3000,
-                    y: (rok - minRok) * SKALA_Y,
-                    fixed: { y: true, x: false },
-                    font: { multi: 'html', color: '#ffffff' },
-                    // Zmiana koloru dla osób zmarłych
-                    color: { 
-                        background: osoba.RokSmierci ? '#444' : '#2c3e50', 
-                        border: osoba.RokSmierci ? '#888' : '#4dabf7' 
-                    },
-                    margin: 15,
-                    widthConstraint: { minimum: 140 }
-                });
-            });
-
-            daneRodziny.forEach(osoba => {
-                if (osoba.IdOjca && osoba.IdMatki) {
-                    let para = [osoba.IdOjca, osoba.IdMatki].sort((a,b) => a-b).join('_');
-                    let idUnii = "unia_" + para;
-                    if (!unie[idUnii]) {
-                        unie[idUnii] = true;
-                        let r1 = daneRodziny.find(o => o.Id == osoba.IdOjca).RokUrodzenia;
-                        let r2 = daneRodziny.find(o => o.Id == osoba.IdMatki).RokUrodzenia;
-                        let rokUnii = Math.max(r1, r2) + 2; 
-                        nodes.push({
-                            id: idUnii,
-                            y: (rokUnii - minRok) * SKALA_Y,
-                            shape: 'dot', size: 0, color: 'rgba(0,0,0,0)',
-                            fixed: { y: true, x: false }
-                        });
-                        edges.push({ from: osoba.IdOjca, to: idUnii, arrows: '', color: '#888', width: 2 });
-                        edges.push({ from: osoba.IdMatki, to: idUnii, arrows: '', color: '#888', width: 2 });
-                    }
-                    edges.push({ from: idUnii, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
-                } else if (osoba.IdOjca || osoba.IdMatki) {
-                    edges.push({ from: osoba.IdOjca || osoba.IdMatki, to: osoba.Id, arrows: 'to', color: '#888', width: 2 });
-                }
-
-                if (osoba.IdPartnera && osoba.Id < osoba.IdPartnera) {
-                    let paraKlucz = [osoba.Id, osoba.IdPartnera].sort((a,b) => a-b).join('_');
-                    if (!unie["unia_" + paraKlucz]) {
-                        edges.push({ from: osoba.Id, to: osoba.IdPartnera, arrows: '', color: '#e67e22', width: 2, dashes: [5, 5] });
-                    }
-                }
-            });
-
-            const options = {
-                physics: {
-                    enabled: true,
-                    solver: 'repulsion',
-                    repulsion: { nodeDistance: 600, centralGravity: 0, springLength: 250, damping: 0.1 },
-                    stabilization: { iterations: 200 }
-                },
-                edges: {
-                    smooth: { enabled: true, type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 }
-                },
-                interaction: { dragNodes: true, zoomView: true, dragView: true }
-            };
-
-            new vis.Network(document.getElementById('drzewo'), { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, options);
-        }
-        zaladujDane();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
