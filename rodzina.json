@@ -31,9 +31,9 @@
   },
   {
     "Id": 4,
-    "IdOjca": null,
-    "IdMatki": null,
-    "IdPartnera": null,
+    "IdOjca": 19,
+    "IdMatki": 20,
+    "IdPartnera": 27,
     "Imie": "Patryk",
     "Nazwisko": "Boryczko",
     "RokUrodzenia": 1983,
@@ -43,7 +43,7 @@
     "Id": 5,
     "IdOjca": 7,
     "IdMatki": 8,
-    "IdPartnera": null,
+    "IdPartnera": 18,
     "Imie": "Katarzyna",
     "Nazwisko": "Boryczko",
     "RokUrodzenia": 1983,
@@ -86,7 +86,7 @@
     "IdPartnera": null,
     "Imie": "Marian",
     "Nazwisko": "Semeniuk",
-    "RokUrodzenia": null,
+    "RokUrodzenia": 1958,
     "RokSmierci": null
   },
   {
@@ -96,7 +96,7 @@
     "IdPartnera": null,
     "Imie": "Marcin",
     "Nazwisko": "Semeniuk",
-    "RokUrodzenia": null,
+    "RokUrodzenia": 1997,
     "RokSmierci": null
   },
   {
@@ -106,7 +106,7 @@
     "IdPartnera": 6,
     "Imie": "Rafa\u0142",
     "Nazwisko": "Pawlik",
-    "RokUrodzenia": 1983,
+    "RokUrodzenia": 1980,
     "RokSmierci": null
   },
   {
@@ -126,7 +126,7 @@
     "IdPartnera": null,
     "Imie": "S\u0142awomir",
     "Nazwisko": "Pawlik",
-    "RokUrodzenia": null,
+    "RokUrodzenia": 1980,
     "RokSmierci": null
   },
   {
@@ -137,12 +137,12 @@
     "Imie": "Adam",
     "Nazwisko": "Pawlik",
     "RokUrodzenia": 2007,
-    "RokSmierci": null
+    "RokSmierci": 2007
   },
   {
     "Id": 15,
-    "IdOjca": null,
-    "IdMatki": null,
+    "IdOjca": 18,
+    "IdMatki": 5,
     "IdPartnera": null,
     "Imie": "Lena",
     "Nazwisko": "Kos",
@@ -156,7 +156,7 @@
     "IdPartnera": null,
     "Imie": "Helena",
     "Nazwisko": "Miczko",
-    "RokUrodzenia": null,
+    "RokUrodzenia": 1940,
     "RokSmierci": null
   },
   {
@@ -166,7 +166,127 @@
     "IdPartnera": null,
     "Imie": "J\u00F3zef",
     "Nazwisko": "Miczko",
-    "RokUrodzenia": null,
+    "RokUrodzenia": 1940,
+    "RokSmierci": null
+  },
+  {
+    "Id": 18,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": 5,
+    "Imie": "Mariusz",
+    "Nazwisko": "Kos",
+    "RokUrodzenia": 1977,
+    "RokSmierci": null
+  },
+  {
+    "Id": 19,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": null,
+    "Imie": "Gerard",
+    "Nazwisko": "Boryczko",
+    "RokUrodzenia": 1940,
+    "RokSmierci": null
+  },
+  {
+    "Id": 20,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": null,
+    "Imie": "Barbara",
+    "Nazwisko": "Boryczko",
+    "RokUrodzenia": 1940,
+    "RokSmierci": null
+  },
+  {
+    "Id": 21,
+    "IdOjca": 19,
+    "IdMatki": 20,
+    "IdPartnera": null,
+    "Imie": "Pattycja",
+    "Nazwisko": "Kwiatkowska",
+    "RokUrodzenia": 1983,
+    "RokSmierci": null
+  },
+  {
+    "Id": 22,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": null,
+    "Imie": "Pawe\u0142",
+    "Nazwisko": "Kwiatkowski",
+    "RokUrodzenia": 1980,
+    "RokSmierci": null
+  },
+  {
+    "Id": 23,
+    "IdOjca": 21,
+    "IdMatki": 22,
+    "IdPartnera": null,
+    "Imie": "Julian",
+    "Nazwisko": "Kwiatkowski",
+    "RokUrodzenia": 2020,
+    "RokSmierci": null
+  },
+  {
+    "Id": 24,
+    "IdOjca": 19,
+    "IdMatki": 20,
+    "IdPartnera": null,
+    "Imie": "Jagoda",
+    "Nazwisko": "Urba\u0144czyk",
+    "RokUrodzenia": 1988,
+    "RokSmierci": null
+  },
+  {
+    "Id": 25,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": null,
+    "Imie": "Andrzej",
+    "Nazwisko": "Urba\u0144czyk",
+    "RokUrodzenia": 1980,
+    "RokSmierci": null
+  },
+  {
+    "Id": 26,
+    "IdOjca": 24,
+    "IdMatki": 25,
+    "IdPartnera": null,
+    "Imie": "Bartek",
+    "Nazwisko": "Urba\u0144czyk",
+    "RokUrodzenia": 2016,
+    "RokSmierci": null
+  },
+  {
+    "Id": 27,
+    "IdOjca": null,
+    "IdMatki": null,
+    "IdPartnera": 4,
+    "Imie": "Magdalena",
+    "Nazwisko": "Drozdowska",
+    "RokUrodzenia": 1990,
+    "RokSmierci": null
+  },
+  {
+    "Id": 28,
+    "IdOjca": 17,
+    "IdMatki": 16,
+    "IdPartnera": null,
+    "Imie": "Henryk",
+    "Nazwisko": "Miczko",
+    "RokUrodzenia": 1960,
+    "RokSmierci": null
+  },
+  {
+    "Id": 29,
+    "IdOjca": 17,
+    "IdMatki": 16,
+    "IdPartnera": null,
+    "Imie": "Danuta",
+    "Nazwisko": "Rempa\u0142a",
+    "RokUrodzenia": 1960,
     "RokSmierci": null
   }
 ]
